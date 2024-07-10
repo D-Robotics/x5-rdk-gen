@@ -40,9 +40,12 @@ SCRIPT_NAME=`basename $0`
 SOURCE_INFO="
 k:kernel:HorizonRDK/x5-kernel.git:
 o:bootloader:HorizonRDK/x5-bootloader.git:
-o:uboot:HorizonRDK/x5-uboot.git:
+o:bootloader/uboot:HorizonRDK/x5-uboot.git:
 o:hobot-boot:HorizonRDK/x5-hobot-boot.git:
 o:hobot-dtb:HorizonRDK/x5-hobot-dtb.git:
+o:hobot-configs:HorizonRDK/x5-hobot-configs.git:
+o:hobot-kernel-headers:HorizonRDK/x5-hobot-kernel-headers.git:
+o:hobot-wifi:HorizonRDK/x5-hobot-wifi.git:
 "
 
 # exit on error on sync

@@ -226,7 +226,7 @@ function make_debian_deb() {
         gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
 
         # set Depends
-        sed -i 's/Depends: .*$/Depends: hobot-boot, udisks2, hobot-audio-config/' ${deb_dst_dir}/DEBIAN/control
+        sed -i 's/Depends: .*$/Depends: hobot-boot, udisks2/' ${deb_dst_dir}/DEBIAN/control
 
         is_allowed=1
         ;;
@@ -496,13 +496,13 @@ function make_debian_deb() {
 
 deb_pkg_list=(
     "hobot-boot"
-    #"hobot-kernel-headers"
+    "hobot-kernel-headers"
     "hobot-dtb"
     #"hobot-bpu-drivers"
-    #"hobot-configs"
+    "hobot-configs"
     #"hobot-utils"
     #"hobot-display"
-    #"hobot-wifi"
+    "hobot-wifi"
     #"hobot-io"
     #"hobot-io-samples"
     #"hobot-multimedia"
