@@ -126,6 +126,13 @@ function make_kernel_headers() {
     rm -rf "${HDRDIR}"/debian
 }
 
+function build_pre_modules()
+{
+	cd ${HR_TOP_DIR}/source/bpu-hw_io
+    make
+    cd -
+}
+
 function build_all()
 {
     # 生成内核配置.config
@@ -156,6 +163,20 @@ function build_all()
         exit 1
     }
 
+    # 编译、安装外部内核模块
+	build_pre_modules "all" || {
+		echo "build_pre_modules failed"
+		exit 1
+	}
+
+	
+	# 执行DEPMOD生成内核模块依赖关系
+	make -j"${N}" modules_depmod \
+		INSTALL_MOD_PATH="${KO_INSTALL_DIR}" || {
+		echo "[ERROR]: make modules_depmod for ${KO_INSTALL_DIR} kernel modules failed"
+		exit 1
+	}
+
     # strip 内核模块, 去掉debug info
     # ${CROSS_COMPILE}strip -g ${KO_INSTALL_DIR}/lib/modules/${KERNEL_VER}/*.ko
     find "${KO_INSTALL_DIR}"/lib/modules/"${KERNEL_VER}"/ -name "*.ko" -exec ${CROSS_COMPILE}strip -g '{}' \;
@@ -163,7 +184,7 @@ function build_all()
     rm -rf "${KO_INSTALL_DIR}"/lib/modules/"${KERNEL_VER}"/{build,source}
 
     # ko 签名
-    pre_pkg_preinst
+    #pre_pkg_preinst
 
     # 拷贝 内核 zImage.lz4
     cp -f "arch/arm64/boot/${kernel_image_name}" "${KERNEL_BUILD_DIR}"/
@@ -176,16 +197,16 @@ function build_all()
     cp -arf arch/arm64/boot/dts/hobot/*.dts "${KERNEL_BUILD_DIR}"/dtb
     cp -arf arch/arm64/boot/dts/hobot/*.dtsi "${KERNEL_BUILD_DIR}"/dtb
 
-    path=./tools/dtbmapping
+    #path=./tools/dtbmapping
 
-    cd $path
+    #cd $path
 
-    export TARGET_KERNEL_DIR="${KERNEL_BUILD_DIR}"/dtb
+   # export TARGET_KERNEL_DIR="${KERNEL_BUILD_DIR}"/dtb
     # build dtb
-    python2 makeimg.py || {
-        echo "make failed"
-        exit 1
-    }
+   # python2 makeimg.py || {
+       # echo "make failed"
+        #exit 1
+    #}
 
     # 生成内核头文件
     make_kernel_headers

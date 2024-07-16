@@ -39,6 +39,8 @@ SCRIPT_NAME=`basename $0`
 # NOTE: *Add only kernel repos here. Add new repos separately below. Keep related repos together*
 SOURCE_INFO="
 k:kernel:HorizonRDK/x5-kernel.git:
+o:kernel/drivers/media/platform/horizon/camsys:HorizonRDK/x5-drv-camsys.git:
+o:bpu-hw_io:HorizonRDK/x5-bpu-hw_io.git:
 o:bootloader:HorizonRDK/x5-bootloader.git:
 o:bootloader/uboot:HorizonRDK/x5-uboot.git:
 o:hobot-boot:HorizonRDK/x5-hobot-boot.git:
