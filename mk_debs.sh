@@ -343,9 +343,6 @@ function make_debian_deb() {
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-boot/' ${deb_dst_dir}/DEBIAN/control
 
-        cp -ar ${debian_src_dir}/${pkg_name}/usr "$deb_dst_dir/"
-        cp -ar ${debian_src_dir}/${pkg_name}/etc "$deb_dst_dir/"
-
         is_allowed=1
         ;;
     hobot-multimedia-dev)
@@ -438,7 +435,7 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-multimedia-dev,hobot-multimedia/' ${deb_dst_dir}/DEBIAN/control
-        
+
         is_allowed=1
         ;;
     hobot-audio-config)
@@ -505,7 +502,7 @@ deb_pkg_list=(
     "hobot-wifi"
     #"hobot-io"
     #"hobot-io-samples"
-    #"hobot-multimedia"
+    "hobot-multimedia"
     #"hobot-multimedia-dev"
     #"hobot-camera"
     #"hobot-dnn"
