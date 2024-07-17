@@ -36,24 +36,6 @@ kernel_patch_lvl=$(awk "/^PATCHLEVEL =/{print \$3}" "${KERNEL_SRC_DIR}"/Makefile
 kernel_sublevel=$(awk "/^SUBLEVEL =/{print \$3}" "${KERNEL_SRC_DIR}"/Makefile)
 export KERNEL_VER="${kernel_version}.${kernel_patch_lvl}.${kernel_sublevel}"
 
-function pre_pkg_preinst() {
-    # Get the signature algorithm used by the kernel.
-    module_sig_hash="$(grep -Po '(?<=CONFIG_MODULE_SIG_HASH=").*(?=")' "${KERNEL_SRC_DIR}/.config")"
-    # Get the key file used by the kernel.
-    module_sig_key="$(grep -Po '(?<=CONFIG_MODULE_SIG_KEY=").*(?=")' "${KERNEL_SRC_DIR}/.config")"
-    module_sig_key="${module_sig_key:-certs/hobot_fixed_signing_key.pem}"
-    # Path to the key file or PKCS11 URI
-    if [[ "${module_sig_key#pkcs11:}" == "${module_sig_key}" && "${module_sig_key#/}" == "${module_sig_key}" ]]; then
-        local key_path="${KERNEL_SRC_DIR}/${module_sig_key}"
-    else
-        local key_path="${module_sig_key}"
-    fi
-    # Certificate path
-    local cert_path="${KERNEL_SRC_DIR}/certs/signing_key.x509"
-    # Sign all installed modules before merging.
-    find "${KO_INSTALL_DIR}"/lib/modules/"${KERNEL_VER}"/ -name "*.ko" -exec "${KERNEL_SRC_DIR}/scripts/sign-file" "${module_sig_hash}" "${key_path}" "${cert_path}" '{}' \;
-}
-
 function make_kernel_headers() {
     SRCDIR=${KERNEL_SRC_DIR}
     HDRDIR="${KERNEL_BUILD_DIR}"/kernel_headers/usr/src/linux-headers-6.1.83
@@ -128,8 +110,12 @@ function make_kernel_headers() {
 
 function build_pre_modules()
 {
-	cd ${HR_TOP_DIR}/source/bpu-hw_io
-    make
+    cd "${HR_TOP_DIR}"/source/hobot-drivers/bpu-hw_io
+    make INSTALL_MOD_PATH="${KO_INSTALL_DIR}" \
+        INSTALL_MOD_STRIP=1 || {
+        echo "[ERROR]: make modules_depmod for ${KO_INSTALL_DIR} kernel modules failed"
+        exit 1
+    }
     cd -
 }
 
@@ -164,27 +150,23 @@ function build_all()
     }
 
     # 编译、安装外部内核模块
-	build_pre_modules "all" || {
-		echo "build_pre_modules failed"
-		exit 1
-	}
+    build_pre_modules "all" || {
+        echo "build_pre_modules failed"
+        exit 1
+    }
 
-	
-	# 执行DEPMOD生成内核模块依赖关系
-	make -j"${N}" modules_depmod \
-		INSTALL_MOD_PATH="${KO_INSTALL_DIR}" || {
-		echo "[ERROR]: make modules_depmod for ${KO_INSTALL_DIR} kernel modules failed"
-		exit 1
-	}
+    # 执行DEPMOD生成内核模块依赖关系
+    make -j"${N}" modules_depmod \
+        INSTALL_MOD_PATH="${KO_INSTALL_DIR}" || {
+        echo "[ERROR]: make modules_depmod for ${KO_INSTALL_DIR} kernel modules failed"
+        exit 1
+    }
 
     # strip 内核模块, 去掉debug info
     # ${CROSS_COMPILE}strip -g ${KO_INSTALL_DIR}/lib/modules/${KERNEL_VER}/*.ko
     find "${KO_INSTALL_DIR}"/lib/modules/"${KERNEL_VER}"/ -name "*.ko" -exec ${CROSS_COMPILE}strip -g '{}' \;
 
     rm -rf "${KO_INSTALL_DIR}"/lib/modules/"${KERNEL_VER}"/{build,source}
-
-    # ko 签名
-    #pre_pkg_preinst
 
     # 拷贝 内核 zImage.lz4
     cp -f "arch/arm64/boot/${kernel_image_name}" "${KERNEL_BUILD_DIR}"/
@@ -196,17 +178,6 @@ function build_all()
     cp -arf arch/arm64/boot/dts/hobot/*.dtb "${KERNEL_BUILD_DIR}"/dtb
     cp -arf arch/arm64/boot/dts/hobot/*.dts "${KERNEL_BUILD_DIR}"/dtb
     cp -arf arch/arm64/boot/dts/hobot/*.dtsi "${KERNEL_BUILD_DIR}"/dtb
-
-    #path=./tools/dtbmapping
-
-    #cd $path
-
-   # export TARGET_KERNEL_DIR="${KERNEL_BUILD_DIR}"/dtb
-    # build dtb
-   # python2 makeimg.py || {
-       # echo "make failed"
-        #exit 1
-    #}
 
     # 生成内核头文件
     make_kernel_headers
