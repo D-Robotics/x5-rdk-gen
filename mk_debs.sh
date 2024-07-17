@@ -391,8 +391,6 @@ function make_debian_deb() {
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-boot/' ${deb_dst_dir}/DEBIAN/control
 
-        cp -ar ${debian_src_dir}/${pkg_name}/usr "$deb_dst_dir/"
-
         is_allowed=1
         ;;
     hobot-spdev)
@@ -505,7 +503,7 @@ deb_pkg_list=(
     "hobot-multimedia"
     #"hobot-multimedia-dev"
     #"hobot-camera"
-    #"hobot-dnn"
+    "hobot-dnn"
     #"hobot-spdev"
     #"hobot-sp-samples"
     #"hobot-multimedia-samples"
