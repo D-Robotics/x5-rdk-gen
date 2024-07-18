@@ -20,7 +20,7 @@ function gen_contrl_file() {
     Version="$3"
     Description="$4"
     Architecture="$ARCH"
-    Maintainer="technical_support@horizon.cc"
+    Maintainer="developer@d-robotics.cc"
     if [ ! -f ${control_path}/control ];then
         touch ${control_path}/control
     fi
@@ -351,7 +351,7 @@ function make_debian_deb() {
         gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
 
         # set Depends
-        sed -i 's/Depends: .*$/Depends: hobot-multimedia,hobot-camera/' ${deb_dst_dir}/DEBIAN/control
+        sed -i 's/Depends: .*$/Depends: hobot-multimedia/' ${deb_dst_dir}/DEBIAN/control
 
         cp -ar ${debian_src_dir}/${pkg_name}/usr "$deb_dst_dir/"
 
@@ -427,7 +427,7 @@ function make_debian_deb() {
         is_allowed=1
         ;;
     hobot-multimedia-samples)
-        pkg_description="Example of Multimedia (Hapi)"
+        pkg_description="Example of Multimedia"
 
         gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
 
@@ -501,7 +501,7 @@ deb_pkg_list=(
     #"hobot-io"
     #"hobot-io-samples"
     "hobot-multimedia"
-    #"hobot-multimedia-dev"
+    "hobot-multimedia-dev"
     #"hobot-camera"
     "hobot-dnn"
     #"hobot-spdev"
