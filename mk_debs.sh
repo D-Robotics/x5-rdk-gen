@@ -506,7 +506,7 @@ deb_pkg_list=(
     "hobot-dnn"
     #"hobot-spdev"
     #"hobot-sp-samples"
-    #"hobot-multimedia-samples"
+    "hobot-multimedia-samples"
     #"hobot-miniboot"
     #"hobot-audio-config"
 )
