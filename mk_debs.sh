@@ -472,7 +472,7 @@ function make_debian_deb() {
 
 deb_pkg_list=(
     "hobot-boot"
-    "hobot-kernel-headers"
+    #"hobot-kernel-headers"
     "hobot-dtb"
     #"hobot-bpu-drivers"
     "hobot-configs"
