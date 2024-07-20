@@ -238,25 +238,6 @@ function make_debian_deb() {
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-boot/' ${deb_dst_dir}/DEBIAN/control
 
-        cd ${debian_src_dir}/${pkg_name}/hbutils
-        # real build
-        make || {
-            echo "make failed"
-            exit 1
-        }
-
-        make install || {
-            echo "make install failed"
-            exit 1
-        }
-
-        mkdir -p $deb_dst_dir/usr/bin
-        ls ${debian_src_dir}/${pkg_name}/hbutils/_install/hrut* > /dev/null
-        if [ $? -eq 0 ];then
-            echo "cp -a ${debian_src_dir}/${pkg_name}/hbutils/_install/hrut* $deb_dst_dir/usr/bin"
-            cp -a ${debian_src_dir}/${pkg_name}/hbutils/_install/hrut* $deb_dst_dir/usr/bin
-        fi
-        cp -a ${debian_src_dir}/${pkg_name}/hbutils/utility/prebuilds/hrut* $deb_dst_dir/usr/bin
         is_allowed=1
         ;;
     hobot-display)
@@ -495,7 +476,7 @@ deb_pkg_list=(
     "hobot-dtb"
     #"hobot-bpu-drivers"
     "hobot-configs"
-    #"hobot-utils"
+    "hobot-utils"
     #"hobot-display"
     "hobot-wifi"
     #"hobot-io"
