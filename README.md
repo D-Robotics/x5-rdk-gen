@@ -9,19 +9,19 @@ rdk-gen用于构建适用于地平线RDK X3的定制操作系统镜像。它提�
 方式一 使用repo
 
 ```shell
-repo init -u git@github.com:HorizonRDK/x5-manifest.git -b develop
+repo init -u git@github.com:D-Robotics/x5-manifest.git -b develop
 ```
 默认情况下，会从https://gerrit.googlesource.com/git-repo下载repo源码，但国内访问googlesource经常访问不到；
 
-可以从先从https://github.com/HorizonRDK/x5-rdk-gen目录下单独下载repo脚本，该脚本使用国内的镜像源，然后执行以下命令下载源代码
+可以从先从https://github.com/D-Robotics/x5-rdk-gen目录下单独下载repo脚本，该脚本使用国内的镜像源，然后执行以下命令下载源代码
 ```shell
-./repo init -u git@github.com:HorizonRDK/x5-manifest.git -b develop
+./repo init -u git@github.com:D-Robotics/x5-manifest.git -b develop
 ```
 
 方式二 使用git
 
 ```shell
-git clone https://github.com/HorizonRDK/x5-rdk-gen.git -b develop
+git clone https://github.com/D-Robotics/x5-rdk-gen.git -b develop
 ```
 
 下载完成后，rdk-gen的目录结构如下：
