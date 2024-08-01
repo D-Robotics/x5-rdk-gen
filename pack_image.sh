@@ -151,8 +151,8 @@ function make_ubuntu_image()
     done
 
     install_packages ${ROOTFS_BUILD_DIR}
-    rm ${ROOTFS_BUILD_DIR}/app/hobot_debs/ -rf
-    rm -rf ${ROOTFS_BUILD_DIR}/lib/aarch64-linux-gnu/dri/
+    #rm ${ROOTFS_BUILD_DIR}/app/hobot_debs/ -rf
+    #rm -rf ${ROOTFS_BUILD_DIR}/lib/aarch64-linux-gnu/dri/
 
     unmount_image "${IMG_FILE}"
     rm -f "${IMG_FILE}"
