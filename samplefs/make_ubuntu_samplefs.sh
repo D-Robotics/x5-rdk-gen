@@ -27,7 +27,7 @@ apt_extra="-o Acquire::http::Proxy=\"http://localhost:3142\""
 PYTHON_PACKAGE_LIST="numpy opencv-python pySerial i2cdev spidev matplotlib pillow \
 websocket websockets lark-parser netifaces google protobuf==3.20.1 "
 
-DEBOOTSTRAP_LIST="systemd sudo locales apt-utils init dbus kmod udev bash-completion ntp libjsoncpp-dev libjson-c-dev rapidjson-dev"
+DEBOOTSTRAP_LIST="systemd sudo locales apt-utils init dbus kmod udev bash-completion ntp libjsoncpp-dev libjson-c-dev rapidjson-dev libgpiod2 libgpiod-dev libdrm-dev libevent-dev kcapi-tools libkcapi-dev libminizip-dev"
 
 get_package_list()
 {
@@ -224,7 +224,7 @@ compress_base_root() {
 	fi
 	log_out "Start compress" "${tar_file} from ${src_dir}" "info"
 	tar --numeric-owner -czpf "${tar_file}" -C "$src_dir"/ --exclude='./dev/*' --exclude='./proc/*' \
-		--exclude='./run/*' --exclude='./tmp/*' --exclude='./sys/*' --exclude='./usr/lib/aarch64-linux-gnu/dri/*' .
+		--exclude='./run/*' --exclude='./tmp/*' --exclude='./sys/*' .
 }
 
 install_package()
@@ -360,6 +360,8 @@ make_base_root() {
 		if [[ $ubuntufs_src == "${LOCAL_DIR}/desktop"  ]] ; then
 			chroot "${dst_dir}" /bin/bash -c "apt remove firefox -y"
 			chroot "${dst_dir}" /bin/bash -c "apt install gpg-agent -y"
+			#chroot "${dst_dir}" /bin/bash -c "echo -e '\n' | add-apt-repository ppa:mozillateam/ppa"
+			chroot "${dst_dir}" /bin/bash -c "apt-get install software-properties-common -y"
 			chroot "${dst_dir}" /bin/bash -c "add-apt-repository ppa:xtradeb/apps -y"
 			chroot "${dst_dir}" /bin/bash -c "apt install firefox -y"
 			# ppa can not use apt_extra,so install here

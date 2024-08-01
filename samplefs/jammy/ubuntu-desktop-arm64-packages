@@ -10,8 +10,6 @@ fcitx-sunpinyin
 fcitx-table-wubi
 fcitx-ui-classic
 fcitx-ui-qimpanel
-firefox
-firefox-locale-zh-hans
 fonts-arphic-ukai
 fonts-arphic-uming
 fonts-noto-cjk
@@ -38,3 +36,5 @@ xfce4-taskmanager
 xfce4-terminal
 xserver-xorg-video-fbdev
 xubuntu-desktop
+mesa-common-dev
+libgbm-dev
