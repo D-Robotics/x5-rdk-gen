@@ -488,8 +488,8 @@ deb_pkg_list=(
     #"hobot-spdev"
     #"hobot-sp-samples"
     "hobot-multimedia-samples"
-    #"hobot-miniboot"
-    #"hobot-audio-config"
+    "hobot-miniboot"
+    "hobot-audio-config"
 )
 
 function help_msg
