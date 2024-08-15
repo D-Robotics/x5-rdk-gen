@@ -55,7 +55,7 @@ cat <<EOF > "${deb_dst_dir}/usr/share/doc/${Package}/copyright"
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 
 Files: *
-Copyright: 2023, Horizon Robotics
+Copyright: 2024, D-Robotics
 EOF
 }
 
@@ -66,7 +66,7 @@ function gen_changelog() {
 cat <<EOF > "${changelog}"
 ${Package} ($Version)
 
-  * Refer to Package Release Notes for details: https://developer.horizon.ai/api/v1/fileData/documents_pi/index.html
+  * Refer to Package Release Notes for details: https://developer.d-robotics.cc/rdk_doc_cn
 
  -- ${Maintainer}
 
@@ -102,7 +102,6 @@ function calc_installed_size()
 
     ((installed_size+=$(find "${deb_dst_dir}" ! \( -type f -o -type l \) | wc -l)))
     sed -ri "s/(^Installed-Size:) ([0-9]*)$/\1 ${installed_size}/" "${control_path}/control"
-    # echo "Installed-Size: ${installed_size}" >> "${control_path}/control"
 }
 
 debian_src_dir="${HR_LOCAL_DIR}/source"
@@ -211,7 +210,7 @@ function make_debian_deb() {
         is_allowed=1
         ;;
     hobot-bpu-drivers)
-        pkg_description="Horizon BPU Drivers"
+        pkg_description="Hobot BPU Drivers"
 
         gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
 
@@ -221,7 +220,7 @@ function make_debian_deb() {
         is_allowed=1
         ;;
     hobot-configs)
-        pkg_description="Horizon custom system configuration"
+        pkg_description="Hobot custom system configuration"
 
         gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
 
@@ -231,7 +230,7 @@ function make_debian_deb() {
         is_allowed=1
         ;;
     hobot-utils)
-        pkg_description="Horizon Software Toolset"
+        pkg_description="Hobot Software Toolset"
 
         gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
 
