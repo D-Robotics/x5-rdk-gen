@@ -360,12 +360,12 @@ make_base_root() {
 		if [[ $ubuntufs_src == "${LOCAL_DIR}/desktop"  ]] ; then
 			chroot "${dst_dir}" /bin/bash -c "apt remove firefox -y"
 			chroot "${dst_dir}" /bin/bash -c "apt install gpg-agent -y"
-			#chroot "${dst_dir}" /bin/bash -c "echo -e '\n' | add-apt-repository ppa:mozillateam/ppa"
 			chroot "${dst_dir}" /bin/bash -c "apt-get install software-properties-common -y"
 			chroot "${dst_dir}" /bin/bash -c "add-apt-repository ppa:xtradeb/apps -y"
 			chroot "${dst_dir}" /bin/bash -c "apt install firefox -y"
 			# ppa can not use apt_extra,so install here
 			chroot "${dst_dir}" /bin/bash -c "apt install firefox-locale-zh-hans -y"
+			chroot "${dst_dir}" /bin/bash -c "add-apt-repository  --remove ppa:xtradeb/apps -y"
 		fi
 	fi
 
