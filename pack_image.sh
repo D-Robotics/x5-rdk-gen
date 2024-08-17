@@ -1,15 +1,15 @@
 #!/bin/bash
 ###
  # COPYRIGHT NOTICE
- # Copyright 2023 Horizon Robotics, Inc.
+ # Copyright 2024 D-Robotics, Inc.
  # All rights reserved.
  # @Date: 2023-04-15 00:47:08
  # @LastEditTime: 2023-05-23 16:56:41
-### 
+###
 
-set -e
+set -euo pipefail
 
-export HR_LOCAL_DIR=$(realpath $(cd $(dirname $0); pwd))
+export HR_LOCAL_DIR="$( cd "$( dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd )"
 
 this_user="$(whoami)"
 if [ "${this_user}" != "root" ]; then
@@ -17,24 +17,70 @@ if [ "${this_user}" != "root" ]; then
     exit 1
 fi
 
+# Default configuration file
+DEFAULT_CONFIG="${HR_LOCAL_DIR}/build_params/ubuntu-22.04_desktop_rdk-x5_release.conf"
 
-# 编译出来的镜像保存位置
+# Initialize variable
+CONFIG_FILE="$DEFAULT_CONFIG"
+LOCAL_BUILD="false"
+
+# Display help information
+show_help() {
+    echo "Usage: $0 [-c config_file] [-h]"
+    echo
+    echo "Options:"
+    echo "  -c config_file  Specify the configuration file to use."
+    echo "  -l              Local build, skip download debain packages"
+    echo "  -h              Display this help message."
+    echo
+    echo "If no configuration file is specified, the default file"
+    echo "at ${DEFAULT_CONFIG} will be used."
+}
+
+# Parse options
+while getopts ":c:lh" opt; do
+    case ${opt} in
+        c )
+            CONFIG_FILE="$OPTARG"
+            ;;
+        l )
+            LOCAL_BUILD="true"
+            ;;
+        h )
+            show_help
+            exit 0
+            ;;
+        \? )
+            echo "Invalid option: -$OPTARG" >&2
+            show_help
+            exit 1
+            ;;
+        : )
+            echo "Option -$OPTARG requires an argument." >&2
+            show_help
+            exit 1
+            ;;
+    esac
+done
+shift $((OPTIND -1))
+
+# Load the configuration file
+source "$CONFIG_FILE"
+
+# Output the configuration file being used (optional)
+echo "Using configuration file: $CONFIG_FILE"
+export | grep " RDK_"
+
+# The location where the image is saved
 export IMAGE_DEPLOY_DIR=${HR_LOCAL_DIR}/deploy
-[ ! -z ${IMAGE_DEPLOY_DIR} ] && [ ! -d $IMAGE_DEPLOY_DIR ] && mkdir $IMAGE_DEPLOY_DIR
+[ -n "${IMAGE_DEPLOY_DIR}" ] && [ ! -d "$IMAGE_DEPLOY_DIR" ] && mkdir "$IMAGE_DEPLOY_DIR"
 
-IMG_FILE="${IMAGE_DEPLOY_DIR}/ubuntu-preinstalled-desktop-arm64.img"
-ROOTFS_ORIG_DIR=${HR_LOCAL_DIR}/rootfs
-ROOTFS_BUILD_DIR=${IMAGE_DEPLOY_DIR}/rootfs
+IMG_FILE="${IMAGE_DEPLOY_DIR}/${RDK_IMAGE_NAME}"
+ROOTFS_ORIG_DIR=${HR_LOCAL_DIR}/${RDK_ROOTFS_DIR}
+ROOTFS_BUILD_DIR=${IMAGE_DEPLOY_DIR}/${RDK_ROOTFS_DIR}
 
-if [[ $# -ge 1 && "$1" = "server" ]]; then
-    IMG_FILE="${IMAGE_DEPLOY_DIR}/ubuntu-preinstalled-server-arm64.img"
-    ROOTFS_ORIG_DIR=${HR_LOCAL_DIR}/rootfs_server
-    ROOTFS_BUILD_DIR=${IMAGE_DEPLOY_DIR}/rootfs_server
-fi
-
-rm -rf ${ROOTFS_BUILD_DIR}
-[ ! -d $ROOTFS_BUILD_DIR ] && mkdir ${ROOTFS_BUILD_DIR}
-
+rm -rf "${ROOTFS_BUILD_DIR}"
+[ ! -d "$ROOTFS_BUILD_DIR" ] && mkdir "${ROOTFS_BUILD_DIR}"
 
 function install_deb_chroot()
 {
@@ -42,20 +88,21 @@ function install_deb_chroot()
     local dst_dir=$2
 
     cd "${dst_dir}/app/hobot_debs"
-    echo "###### Installing" "${package} ######"
+    echo "[INFO] Installing" "${package}"
     depends=$(dpkg-deb -f "${package}" Depends | sed 's/([^()]*)//g')
-    if [ -f ${package} ];then
+    if [ -f "${package}" ];then
         chroot "${dst_dir}" /bin/bash -c "dpkg --ignore-depends=${depends// /} -i /app/hobot_debs/${package}"
     fi
-    echo "###### Installed" "${package} ######"
+    echo "[INFO] Installed" "${package}"
+    return 0
 }
 
 function install_packages()
 {
     local dst_dir=$1
-    if [ ! -d ${dst_dir} ]; then
+    if [ ! -d "${dst_dir}" ]; then
         echo "dst_dir is not exist!" "${dst_dir}"
-        exit -1
+        exit 1
     fi
 
     echo "Start install hobot packages"
@@ -68,11 +115,12 @@ function install_packages()
         install_deb_chroot "${deb_name}" "${dst_dir}"
     done
 
-    chroot ${dst_dir} /bin/bash -c "apt clean"
+    chroot "${dst_dir}" /bin/bash -c "apt clean"
     echo "Install hobot packages is finished"
+    return 0
 }
 
-function unmount(){
+function unmount() {
     if [ -z "$1" ]; then
         DIR=$PWD
     else
@@ -86,13 +134,14 @@ function unmount(){
             umount "$loc"
         done
     done
-    }
+    return 0
+}
 
-function unmount_image(){
+function unmount_image() {
     sync
     sleep 1
-    LOOP_DEVICE=$(losetup --list | grep "$1" | cut -f1 -d' ')
-    if [ -n "$LOOP_DEVICE" ]; then
+    LOOP_DEVICE=$(losetup --list | grep "$1" | cut -f1 -d' ' || true)
+    if [ -n "${LOOP_DEVICE:-}" ]; then
         for part in "$LOOP_DEVICE"p*; do
             if DIR=$(findmnt -n -o target -S "$part"); then
                 unmount "$DIR"
@@ -100,39 +149,52 @@ function unmount_image(){
         done
         losetup -d "$LOOP_DEVICE"
     fi
+    return 0
 }
 
-# 制作 ubuntu 根文件系统镜像
+# Make Ubuntu rootfile system image
 function make_ubuntu_image()
 {
-    # ubuntu 系统直接解压制作image
+    # Unzip ubuntu samplefs to create image
     echo "tar -xzf ${ROOTFS_ORIG_DIR}/samplefs*.tar.gz -C ${ROOTFS_BUILD_DIR}"
-    tar --same-owner --numeric-owner -xzpf ${ROOTFS_ORIG_DIR}/samplefs*.tar.gz -C ${ROOTFS_BUILD_DIR}
-    mkdir -p ${ROOTFS_BUILD_DIR}/{home,home/root,mnt,root,usr/lib,var,media,tftpboot,var/lib,var/volatile,dev,proc,tmp,run,sys,userdata,app,boot/hobot,boot/config}
-    cat "${HR_LOCAL_DIR}/VERSION" > ${ROOTFS_BUILD_DIR}/etc/version
+    tar --same-owner --numeric-owner -xzpf "${ROOTFS_ORIG_DIR}"/samplefs*.tar.gz -C "${ROOTFS_BUILD_DIR}"
+    mkdir -p "${ROOTFS_BUILD_DIR}"/{home,home/root,mnt,root,usr/lib,var,media}
+    mkdir -p "${ROOTFS_BUILD_DIR}"/{tftpboot,var/lib,var/volatile,dev,proc,tmp}
+    mkdir -p "${ROOTFS_BUILD_DIR}"/{run,sys,userdata,app,boot/hobot,boot/config}
+    cat "${HR_LOCAL_DIR}/VERSION" > "${ROOTFS_BUILD_DIR}"/etc/version
 
     # Custom Special Modifications
     echo "Custom Special Modifications"
     source hobot_customize_rootfs.sh
-    hobot_customize_rootfs ${ROOTFS_BUILD_DIR}
+    hobot_customize_rootfs "${ROOTFS_BUILD_DIR}"
 
     # install debs
     echo "Install hobot debs in /app/hobot_debs"
-    mkdir -p ${ROOTFS_BUILD_DIR}/app/hobot_debs
-    [ -d "${HR_LOCAL_DIR}/deb_packages" ] && find "${HR_LOCAL_DIR}/deb_packages" -maxdepth 1 -type f -name '*.deb' -exec cp -f {} "${ROOTFS_BUILD_DIR}/app/hobot_debs" \;
-    [ -d "${HR_LOCAL_DIR}/third_packages" ] && find "${HR_LOCAL_DIR}/third_packages" -maxdepth 1 -type f -name '*.deb' -exec cp -f {} "${ROOTFS_BUILD_DIR}/app/hobot_debs" \;
+    mkdir -p "${ROOTFS_BUILD_DIR}"/app/hobot_debs
+    [ -d "${HR_LOCAL_DIR}/${RDK_DEB_PKG_DIR}" ] \
+        && find "${HR_LOCAL_DIR}/${RDK_DEB_PKG_DIR}" \
+        -maxdepth 1 -type f -name '*.deb' -exec cp -f {} \
+        "${ROOTFS_BUILD_DIR}/app/hobot_debs" \;
+    [ -d "${HR_LOCAL_DIR}/${RDK_THIRD_DEB_PKG_DIR}" ] \
+        && find "${HR_LOCAL_DIR}/${RDK_THIRD_DEB_PKG_DIR}" \
+        -maxdepth 1 -type f -name '*.deb' -exec cp -f {} \
+        "${ROOTFS_BUILD_DIR}/app/hobot_debs" \;
     # merge deploy deb packages to rootfs, they are customer packages
-    [ -d "${HR_LOCAL_DIR}/deploy/deb_pkgs" ] && find "${HR_LOCAL_DIR}/deploy/deb_pkgs" -maxdepth 1 -type f -name '*.deb' -exec cp -f {} "${ROOTFS_BUILD_DIR}/app/hobot_debs" \;
+    [ -d "${HR_LOCAL_DIR}/deploy/deb_pkgs" ] \
+        && find "${HR_LOCAL_DIR}/deploy/deb_pkgs" \
+        -maxdepth 1 -type f -name '*.deb' -exec cp -f {} \
+        "${ROOTFS_BUILD_DIR}/app/hobot_debs" \;
+
     # delete same deb packages, keep the latest version
     cd "${ROOTFS_BUILD_DIR}/app/hobot_debs"
     deb_list=$(ls -1 *.deb | sort)
     for file in ${deb_list[@]}; do
         # Extract package name and version
-        package=$(echo $file | awk -F"_" '{print $1}')
-        version=$(echo $file | awk -F"_" '{print $2}')
+        package=$(echo "$file" | awk -F"_" '{print $1}')
+        version=$(echo "$file" | awk -F"_" '{print $2}')
 
         # If the current package name is different from the previous one, keep the current file (latest version)
-        if [ "$package" != "$previous_package" ]; then
+        if [ "$package" != "${previous_package:-}" ]; then
             previous_file="$file"
             previous_package="$package"
             previous_version="$version"
@@ -150,9 +212,8 @@ function make_ubuntu_image()
         fi
     done
 
-    install_packages ${ROOTFS_BUILD_DIR}
-    #rm ${ROOTFS_BUILD_DIR}/app/hobot_debs/ -rf
-    #rm -rf ${ROOTFS_BUILD_DIR}/lib/aarch64-linux-gnu/dri/
+    install_packages "${ROOTFS_BUILD_DIR}"
+    rm "${ROOTFS_BUILD_DIR}"/app/hobot_debs/ -rf
 
     unmount_image "${IMG_FILE}"
     rm -f "${IMG_FILE}"
@@ -183,7 +244,7 @@ function make_ubuntu_image()
     parted --script "${IMG_FILE}" mklabel msdos
     parted --script "${IMG_FILE}" unit B mkpart primary fat32 "${CONFIG_PART_START}" "$((CONFIG_PART_START + CONFIG_PART_SIZE - 1))"
     parted --script "${IMG_FILE}" unit B mkpart primary ext4 "${ROOT_PART_START}" "$((ROOT_PART_START + ROOT_PART_SIZE - 1))"
-    # 设置为启动分区
+    # Set as boot partition
     parted "${IMG_FILE}" set 2 boot on
 
     echo "Creating loop device..."
@@ -222,21 +283,16 @@ function make_ubuntu_image()
     unmount_image "${IMG_FILE}"
     rm -rf "${ROOTFS_DIR}"
 
-    md5sum "${IMG_FILE}" > ${IMG_FILE}.md5sum
+    md5sum "${IMG_FILE}" > "${IMG_FILE}".md5sum
 
     echo "Make Ubuntu Image successfully"
 
     exit 0
 }
 
-if [[ $# -eq 0 || ( $# -eq 1 && "$1" = "server" ) ]]; then
-    if [[ $# -eq 1 && "$1" = "server" ]]; then
-        ${HR_LOCAL_DIR}/download_samplefs.sh ${ROOTFS_ORIG_DIR} "-u" "jammy" "-t" "server"
-    else
-        ${HR_LOCAL_DIR}/download_samplefs.sh ${ROOTFS_ORIG_DIR} "-u" "jammy"
-    fi
-    ${HR_LOCAL_DIR}/download_deb_pkgs.sh ${HR_LOCAL_DIR}/deb_packages "-u" "jammy"
+if [ "${LOCAL_BUILD}" = "false" ]; then
+    "${HR_LOCAL_DIR}"/download_samplefs.sh -c "${CONFIG_FILE}"
+    "${HR_LOCAL_DIR}"/download_deb_pkgs.sh -c "${CONFIG_FILE}"
 fi
 
 make_ubuntu_image
-

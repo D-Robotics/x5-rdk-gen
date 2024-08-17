@@ -32,7 +32,7 @@ function hobot_customize_rootfs()
   # Just regular DNS and maintain /etc/resolv.conf as a file
   sed "/dns/d" -i "${DST_ROOTFS_DIR}"/etc/NetworkManager/NetworkManager.conf
   sed "s/\[main\]/\[main\]\ndns=default\nrc-manager=file/g" -i "${DST_ROOTFS_DIR}"/etc/NetworkManager/NetworkManager.conf
-  if [[ -n $NM_IGNORE_DEVICES ]]; then
+  if [[ -n "${NM_IGNORE_DEVICES:-}" ]]; then
       mkdir -p "${DST_ROOTFS_DIR}"/etc/NetworkManager/conf.d/
       cat <<-EOF > "${DST_ROOTFS_DIR}"/etc/NetworkManager/conf.d/10-ignore-interfaces.conf
 [keyfile]
