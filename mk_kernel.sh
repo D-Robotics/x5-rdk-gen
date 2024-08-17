@@ -1,7 +1,7 @@
 #!/bin/bash
 ###
  # COPYRIGHT NOTICE
- # Copyright 2023 Horizon Robotics, Inc.
+ # Copyright 2024 D-Robotics, Inc.
  # All rights reserved.
  # @Date: 2023-03-16 15:02:28
  # @LastEditTime: 2023-03-22 18:52:51
@@ -21,9 +21,10 @@ export IMAGE_DEPLOY_DIR=${HR_TOP_DIR}/deploy
 [ -n "${IMAGE_DEPLOY_DIR}" ] && [ ! -d "$IMAGE_DEPLOY_DIR" ] && mkdir "$IMAGE_DEPLOY_DIR"
 
 KERNEL_BUILD_DIR=${IMAGE_DEPLOY_DIR}/kernel
-[ -n "${IMAGE_DEPLOY_DIR}" ] && [ ! -d ""${KERNEL_BUILD_DIR}"" ] && mkdir "$KERNEL_BUILD_DIR"
+[ -n "${IMAGE_DEPLOY_DIR}" ] && [ ! -d "${KERNEL_BUILD_DIR}" ] && mkdir "$KERNEL_BUILD_DIR"
 
-N=$(($(grep -c 'processor' /proc/cpuinfo) - 2 ))
+[ $(cat /proc/cpuinfo |grep 'processor'|wc -l) -gt 2 ] \
+    && N="$((($(cat /proc/cpuinfo |grep 'processor'|wc -l)) - 2))" || N=1
 
 # 默认使用emmc配置，对于nor、nand需要使用另外的配置文件
 kernel_config_file=hobot_x5_rdk_ubuntu_defconfig
@@ -90,7 +91,7 @@ function make_kernel_headers() {
     done
 
     cd "${SRCDIR}"
-    find . -iname "*.c" -print0 | while IFS= read -r -d '' file; do
+    find scripts -iname "*.c" -print0 | while IFS= read -r -d '' file; do
         cp --parents -Rf "$file" "${HDRDIR}"
     done
     make M="${HDRDIR}"/scripts clean
@@ -123,7 +124,7 @@ function build_all()
 {
     # 生成内核配置.config
     make $kernel_config_file || {
-        echo "make $config failed"
+        echo "make ${kernel_config_file} failed"
         exit 1
     }
 
