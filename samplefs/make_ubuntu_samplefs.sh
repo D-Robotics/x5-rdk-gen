@@ -72,7 +72,7 @@ fi
 
 echo "Make ${tar_file}"
 
-root_path=${ubuntufs_src}/${RELEASE}-xj3-${ARCH}
+root_path=${ubuntufs_src}/${RELEASE}-rdk-${ARCH}
 
 # Release specific packages
 case $RELEASE in
@@ -436,7 +436,7 @@ make_base_root() {
 }
 
 log_out "Build ubuntu base" "root_path=$root_path tar_file=$tar_file" "info"
-log_out "Start build" "ubuntu base :${RELEASE}-xj3-${ARCH}" "info"
+log_out "Start build" "ubuntu base :${RELEASE}-rdk-${ARCH}" "info"
 
 if [ ! -f "${tar_file}0" ];then
 	make_base_root "${root_path}"
