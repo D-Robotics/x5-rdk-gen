@@ -2,7 +2,7 @@
 
 ## 概述
 
-介绍 SDK 开发环境的搭建方法、源码目录结构、系统镜像的编译说明。
+介绍 RDK 开发环境的搭建方法、源码目录结构、系统镜像的编译说明。
 
 ## 开发环境
 
@@ -16,30 +16,30 @@ Ubuntu 18.04 系统安装以下软件包：
 
 ```shell
 sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
-flex python-numpy mtd-utils zlib1g-dev debootstrap \
-libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
-curl git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
-android-tools-fsutils mtools parted dosfstools udev rsync
+                        flex python-numpy mtd-utils zlib1g-dev debootstrap \
+                        libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
+                        curl git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
+                        android-tools-fsutils mtools parted dosfstools udev rsync
 ```
 
 Ubuntu 20.04 系统安装以下软件包：
 
 ```shell
 sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
-flex python-numpy mtd-utils zlib1g-dev debootstrap \
-libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
-curl git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
-android-sdk-libsparse-utils android-sdk-ext4-utils mtools parted dosfstools udev rsync
+                        flex python-numpy mtd-utils zlib1g-dev debootstrap \
+                        libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
+                        curl git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
+                        android-sdk-libsparse-utils android-sdk-ext4-utils mtools parted dosfstools udev rsync
 ```
 
 Ubuntu 22.04 系统安装以下软件包：
 
 ```shell
 sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
-flex python3-numpy mtd-utils zlib1g-dev debootstrap \
-libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
-curl repo git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
-android-sdk-libsparse-utils mtools parted dosfstools udev rsync
+                        flex python3-numpy mtd-utils zlib1g-dev debootstrap \
+                        libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
+                        curl repo git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
+                        android-sdk-libsparse-utils mtools parted dosfstools udev rsync
 ```
 
 **安装交叉编译工具链**
@@ -78,7 +78,7 @@ rdk-gen提供两个主要的功能：
 rdk-gen 源码下载方式：
 
 ```shell
-git clone https://github.com/D-Robotics/rdk-gen.git
+git clone https://github.com/D-Robotics/x5-rdk-gen.git
 ```
 
 下载完成后，rdk-gen 的主要文件、目录说明如下：
@@ -250,7 +250,7 @@ The debian package named by 'help' is not supported, please check the input para
 
 `bootloader`源码用于生成最小启动镜像 `miniboot.img`，生成包含分区表、spl、ddr、bl31、uboot等的最小启动固件。
 
-RDK 的最小启动镜像一般会由 RDK 官方进行维护发布，可以从 [miniboot](http://sunrise.horizon.cc/downloads/miniboot/) 下载对应的版本，`hobot-miniboot` 软件包也会同步更新。`bootloader` 涉及最基础的启动过程，在修改本模块前，请充分了解本模块的功能。
+RDK 的最小启动镜像一般会由 RDK 官方进行维护发布，可以从 [miniboot](https://archive.d-robotics.cc/downloads/miniboot/) 下载对应的版本，`hobot-miniboot` 软件包也会同步更新。`bootloader` 涉及最基础的启动过程，在修改本模块前，请充分了解本模块的功能。
 
 按照以下步骤重新编译生成 miniboot。
 
@@ -309,14 +309,14 @@ cd source/bootloader/build
 
 ```shell
 sudo apt-get install wget ca-certificates device-tree-compiler pv bc lzop zip binfmt-support \
-build-essential ccache debootstrap ntpdate gawk gcc-arm-linux-gnueabihf qemu-user-static \
-u-boot-tools uuid-dev zlib1g-dev unzip libusb-1.0-0-dev fakeroot parted pkg-config \
-libncurses5-dev whiptail debian-keyring debian-archive-keyring f2fs-tools libfile-fcntllock-perl \
-rsync libssl-dev nfs-kernel-server btrfs-progs ncurses-term p7zip-full kmod dosfstools \
-libc6-dev-armhf-cross imagemagick curl patchutils liblz4-tool libpython2.7-dev linux-base swig acl \
-python3-dev python3-distutils libfdt-dev locales ncurses-base pixz dialog systemd-container udev \
-lib32stdc++6 libc6-i386 lib32ncurses5 lib32tinfo5 bison libbison-dev flex libfl-dev cryptsetup gpg \
-gnupg1 gpgv1 gpgv2 cpio aria2 pigz dirmngr python3-distutils distcc git dos2unix apt-cacher-ng
+                    build-essential ccache debootstrap ntpdate gawk gcc-arm-linux-gnueabihf qemu-user-static \
+                    u-boot-tools uuid-dev zlib1g-dev unzip libusb-1.0-0-dev fakeroot parted pkg-config \
+                    libncurses5-dev whiptail debian-keyring debian-archive-keyring f2fs-tools libfile-fcntllock-perl \
+                    rsync libssl-dev nfs-kernel-server btrfs-progs ncurses-term p7zip-full kmod dosfstools \
+                    libc6-dev-armhf-cross imagemagick curl patchutils liblz4-tool libpython2.7-dev linux-base swig acl \
+                    python3-dev python3-distutils libfdt-dev locales ncurses-base pixz dialog systemd-container udev \
+                    lib32stdc++6 libc6-i386 lib32ncurses5 lib32tinfo5 bison libbison-dev flex libfl-dev cryptsetup gpg \
+                    gnupg1 gpgv1 gpgv2 cpio aria2 pigz dirmngr python3-distutils distcc git dos2unix apt-cacher-ng
 ```
 
 ### 重点工具介绍
@@ -351,7 +351,7 @@ parted命令是由GNU组织开发的一款功能强大的磁盘分区和分区�
 下载`rdk-gen`源码：
 
 ```shell
-git clone https://github.com/D-Robotics/rdk-gen.git
+git clone https://github.com/D-Robotics/x5-rdk-gen.git
 ```
 
 执行以下命令生成ubuntu文件系统：
@@ -418,8 +418,3 @@ rootfs                                           # 解压 samplefs_desktop_jammy
 **DESKTOP_PACKAGE_LIST**: 支持桌面图形化界面需要安装的软件包
 
 RDK 官方维护的 `samplefs_desktop` 文件系统会包含以上所有配置包的内容，用户可以根据自己的需求进行增、删。
-
-
-
-
-
