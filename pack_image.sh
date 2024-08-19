@@ -290,7 +290,7 @@ function make_ubuntu_image()
     exit 0
 }
 
-if [ "${LOCAL_BUILD}" = "false" ]; then
+if [ "${LOCAL_BUILD}" == "false" ]; then
     "${HR_LOCAL_DIR}"/download_samplefs.sh -c "${CONFIG_FILE}"
     "${HR_LOCAL_DIR}"/download_deb_pkgs.sh -c "${CONFIG_FILE}"
 fi
