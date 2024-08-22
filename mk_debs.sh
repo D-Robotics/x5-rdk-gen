@@ -479,7 +479,7 @@ deb_pkg_list=(
 
 function help_msg
 {
-    echo "./mk_deb.sh [all] | [deb_name]"
+    echo "./mk_debs.sh [all] | [deb_name]"
     for pkg_name in "${deb_pkg_list[@]}"; do
         echo "    ${pkg_name}"
     done

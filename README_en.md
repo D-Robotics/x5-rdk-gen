@@ -199,14 +199,14 @@ These files are used by the `hobot-boot`, `hobot-dtb`, and `hobot-kernel-headers
 
 ### Compiling RDK Official Debian Packages
 
-Packages starting with `hobot-` are the source and configuration files for RDK's official Debian packages, which are developed and maintained by RDK. After downloading the complete source code, you can rebuild the Debian packages by executing `mk_deb.sh`.
+Packages starting with `hobot-` are the source and configuration files for RDK's official Debian packages, which are developed and maintained by RDK. After downloading the complete source code, you can rebuild the Debian packages by executing `mk_debs.sh`.
 
 Help information is as follows:
 
 ```
 $ ./mk_debs.sh help
 The debian package named by 'help' is not supported, please check the input parameters.
-./mk_deb.sh [all] | [deb_name]
+./mk_debs.sh [all] | [deb_name]
     hobot-boot
     hobot-kernel-headers
     hobot-dtb
@@ -232,17 +232,17 @@ Execute the following commands to rebuild all Debian packages (kernel compilatio
 
 ```
 ./mk_kernel.sh
-./mk_deb.sh
+./mk_debs.sh
 ```
 
 Once the build is complete, the packages with the `.deb` extension will be generated in the `deploy/deb_pkgs` directory.
 
 #### Compiling Individual Debian Packages
 
-`mk_deb.sh` supports building individual packages by specifying the package name as an argument, for example:
+`mk_debs.sh` supports building individual packages by specifying the package name as an argument, for example:
 
 ```
-./mk_deb.sh hobot-configs
+./mk_debs.sh hobot-configs
 ```
 
 ### Compiling the Bootloader

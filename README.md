@@ -200,14 +200,14 @@ dtb  Image  Image.lz4  kernel_headers  modules
 
 ### 编译 RDK 官方 debian 软件包
 
-以 hobot- 开头软件包是 RDK 官方开发和维护的 debian 软件包的源码和配置，下载完整源码后，可以执行 `mk_deb.sh` 重新构建debian包。
+以 hobot- 开头软件包是 RDK 官方开发和维护的 debian 软件包的源码和配置，下载完整源码后，可以执行 `mk_debs.sh` 重新构建debian包。
 
 帮助信息如下：
 
 ```shell
 $ ./mk_debs.sh help
 The debian package named by 'help' is not supported, please check the input parameters.
-./mk_deb.sh [all] | [deb_name]
+./mk_debs.sh [all] | [deb_name]
     hobot-boot
     hobot-kernel-headers
     hobot-dtb
@@ -233,17 +233,17 @@ The debian package named by 'help' is not supported, please check the input para
 
 ```shell
 ./mk_kernel.sh
-./mk_deb.sh
+./mk_debs.sh
 ```
 
 构建完成后，会在`deploy/deb_pkgs`目录下生成 `*.deb` 后缀的软件包。
 
 #### 构建单独的 debian 软件包
 
-`mk_deb.sh` 支持单独构建指定的软件包，在执行时带包名参数即可，例如：
+`mk_debs.sh` 支持单独构建指定的软件包，在执行时带包名参数即可，例如：
 
 ```shell
-./mk_deb.sh hobot-configs
+./mk_debs.sh hobot-configs
 ```
 
 ### 编译 bootloader
