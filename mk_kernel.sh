@@ -95,6 +95,8 @@ function make_kernel_headers() {
         cp --parents -Rf "$file" "${HDRDIR}"
     done
     make M="${HDRDIR}"/scripts clean
+    cp -Rf ${SRCDIR}/scripts/module.lds ${HDRDIR}/scripts
+    cp -Rf ${SRCDIR}/scripts/module.lds.S ${HDRDIR}/scripts
 
     cd "${HR_LOCAL_DIR}"
     rm -rf "${HDRDIR}"/arch/arm64/mach*
