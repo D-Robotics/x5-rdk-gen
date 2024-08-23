@@ -269,12 +269,18 @@ function make_debian_deb() {
         sed -i 's/Depends: .*$/Depends: hobot-boot/' "${deb_dst_dir}"/DEBIAN/control
 
         mkdir -p "${deb_dst_dir}"/usr/bin
+	mkdir -p $deb_dst_dir/usr/hobot/bin/
         hb_dtb_tool_dir=${debian_src_dir}/${pkg_name}/hb_dtb_tool
         cd "${debian_src_dir}"/"${pkg_name}"/hb_dtb_tool
         make || {
             echo "make failed"
             exit 1
         }
+	cd ${debian_src_dir}/${pkg_name}/hb_gpioinfo
+	make install || {
+	    echo "make failed"
+	    exit 1
+	}
 
         if [ -f "${hb_dtb_tool_dir}"/hb_dtb_tool ];then
             echo "cp -a ${hb_dtb_tool_dir}/hb_dtb_tool ${deb_dst_dir}/usr/bin"
