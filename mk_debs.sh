@@ -235,6 +235,12 @@ function make_debian_deb() {
         sed -i 's/Depends: .*$/Depends: /' "${deb_dst_dir}"/DEBIAN/control
 
         cd "${debian_src_dir}"/"${pkg_name}"/hobot_display_services
+
+        make clean || {
+           echo "make clean failed"
+           exit 1
+        }
+
         make || {
             echo "make failed"
             exit 1
@@ -272,6 +278,12 @@ function make_debian_deb() {
 	mkdir -p $deb_dst_dir/usr/hobot/bin/
         hb_dtb_tool_dir=${debian_src_dir}/${pkg_name}/hb_dtb_tool
         cd "${debian_src_dir}"/"${pkg_name}"/hb_dtb_tool
+
+        make clean || {
+           echo "make clean failed"
+           exit 1
+        }
+
         make || {
             echo "make failed"
             exit 1
@@ -339,6 +351,11 @@ function make_debian_deb() {
         sed -i 's/Depends: .*$/Depends: hobot-boot/' "${deb_dst_dir}"/DEBIAN/control
         cd "${debian_src_dir}"/"${pkg_name}"/drivers/sensor
 
+        make clean || {
+           echo "make clean failed"
+           exit 1
+        }
+
         make || {
            echo "make failed"
            exit 1
@@ -375,6 +392,11 @@ function make_debian_deb() {
         sed -i 's/Depends: .*$/Depends: hobot-multimedia,hobot-camera,hobot-dnn/' "${deb_dst_dir}"/DEBIAN/control
 
         cd "${debian_src_dir}"/"${pkg_name}"
+
+        ./build.sh clean || {
+            echo "build.sh clean failed"
+            exit 1
+        }
 
         ./build.sh || {
             echo "build.sh failed"
@@ -417,6 +439,11 @@ function make_debian_deb() {
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-boot,hobot-dtb/' "${deb_dst_dir}"/DEBIAN/control
         cd "${debian_src_dir}"/"${pkg_name}"/debian/boot/overlays
+
+        make clean || {
+           echo "make clean failed"
+           exit 1
+        }
 
         make || {
             echo "make failed"
