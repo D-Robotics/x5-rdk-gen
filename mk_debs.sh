@@ -149,6 +149,13 @@ function make_debian_deb() {
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-dtb/' "${deb_dst_dir}"/DEBIAN/control
 
+        cd "${debian_src_dir}"/"${pkg_name}"/debian/boot
+
+        mkimage -C none -A arm -T script -d boot.cmd boot.scr || {
+            echo "mkimage failed"
+            exit 1
+        }
+
         boot_dest_dir=${deb_dst_dir}/boot
         mkdir -p "${boot_dest_dir}"
         cp -arf "${IMAGE_DEPLOY_DIR}"/kernel/Image  "${boot_dest_dir}"/
