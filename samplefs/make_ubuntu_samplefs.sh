@@ -43,7 +43,7 @@ get_package_list()
 # The default version is Ubuntu Desktop
 ADD_PACKAGE_LIST="$(get_package_list "base") $(get_package_list "server") $(get_package_list "desktop") "
 ubuntufs_src="${LOCAL_DIR}/desktop"
-samplefs_version="v3.0.0"
+samplefs_version="v3.0.1"
 tar_file=${ubuntufs_src}/samplefs_desktop_${RELEASE}-${samplefs_version}.tar.gz
 
 
@@ -392,6 +392,7 @@ make_base_root() {
 	if [ "${RELEASE}" == "jammy" ]; then
 		chroot "${dst_dir}" /bin/bash -c "apt install ros-humble-ros-base -y"
 		chroot "${dst_dir}" /bin/bash -c "apt install ros-humble-cv-bridge -y"
+		chroot "${dst_dir}" /bin/bash -c "apt install libpcl-dev -y"
 	fi
 	
 	chroot "${dst_dir}" /bin/bash -c "dpkg --get-selections" | grep -v deinstall | awk '{print $1}' | cut -f1 -d':' | sort > "${tar_file}".info
