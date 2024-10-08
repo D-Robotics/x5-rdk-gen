@@ -90,7 +90,7 @@ EOF
 
     for group_name in ${groups_list}
     do
-        chroot "${DST_ROOTFS_DIR}" /bin/bash -c "groupadd -rf ${group_name} || true"
+        chroot "${DST_ROOTFS_DIR}" /bin/bash -c "/usr/sbin/groupadd -rf ${group_name} || true"
     done
 
    # Create User
@@ -98,7 +98,7 @@ EOF
   ROOTPWD="root"
   SUN_PWD="sunrise"
   chroot "${DST_ROOTFS_DIR}" /bin/bash -c "(echo $ROOTPWD;echo $ROOTPWD;) | passwd root"
-  chroot "${DST_ROOTFS_DIR}" /bin/bash -c "useradd -U -m -d /home/${SUN_USERNAME} -k /etc/skel/ -s /bin/bash -G sudo,${groups_list//' '/','} ${SUN_USERNAME}"
+  chroot "${DST_ROOTFS_DIR}" /bin/bash -c "/usr/sbin/useradd -U -m -d /home/${SUN_USERNAME} -k /etc/skel/ -s /bin/bash -G sudo,${groups_list//' '/','} ${SUN_USERNAME}"
   chroot "${DST_ROOTFS_DIR}" /bin/bash -c "(echo ${SUN_PWD};echo ${SUN_PWD};) | passwd ${SUN_USERNAME}"
 
   chroot "${DST_ROOTFS_DIR}" /bin/bash -c "cp -aRf /etc/skel/. /root/"
