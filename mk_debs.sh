@@ -234,14 +234,13 @@ function make_debian_deb() {
         is_allowed=1
         ;;
     hobot-display)
-        pkg_description="Display Support Package"
+        pkg_description="dtbo files of dsi lcd panel"
 
         gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
 
         # set Depends
-        sed -i 's/Depends: .*$/Depends: /' "${deb_dst_dir}"/DEBIAN/control
-
-        cd "${debian_src_dir}"/"${pkg_name}"/hobot_display_services
+        sed -i 's/Depends: .*$/Depends: hobot-boot,hobot-dtb/' "${deb_dst_dir}"/DEBIAN/control
+        cd "${debian_src_dir}"/"${pkg_name}"/debian/boot/overlays
 
         make clean || {
            echo "make clean failed"
@@ -252,15 +251,9 @@ function make_debian_deb() {
             echo "make failed"
             exit 1
         }
-
-        mkdir -p "${debian_src_dir}"/usr/bin
-        cp -a "${debian_src_dir}"/"${pkg_name}"/hobot_display_services/display "${deb_dst_dir}"/usr/bin/hobot_display_service
-        cp -a "${debian_src_dir}"/"${pkg_name}"/hobot_display_services/get_edid_raw_data "${deb_dst_dir}"/usr/bin
-        cp -a "${debian_src_dir}"/"${pkg_name}"/hobot_display_services/get_hdmi_res "${deb_dst_dir}"/usr/bin
-        cp -a "${debian_src_dir}"/"${pkg_name}"/hobot_display_services/hobot_parse_std_timing "${deb_dst_dir}"/usr/bin
-        mkdir -p "${deb_dst_dir}"/usr/lib
-        cp -a "${debian_src_dir}"/"${pkg_name}"/hobot_display_services/liblt8618.so "${deb_dst_dir}"/usr/lib
-
+        mkdir -p "${deb_dst_dir}"/boot/overlays
+        cp -arf "${debian_src_dir}"/"${pkg_name}"/debian/boot/overlays/*.dtbo "${deb_dst_dir}"/boot/overlays
+        rm "${deb_dst_dir}"/boot/overlays/Makefile
         is_allowed=1
         ;;
     hobot-wifi)
@@ -513,7 +506,7 @@ deb_pkg_list=(
     "hobot-dtb"
     "hobot-configs"
     "hobot-utils"
-    #"hobot-display"
+    "hobot-display"
     "hobot-wifi"
     "hobot-io"
     "hobot-io-samples"
