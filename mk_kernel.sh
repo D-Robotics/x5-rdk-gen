@@ -186,6 +186,39 @@ function build_all()
     make_kernel_headers
 }
 
+function kernel_menuconfig() {
+	# Check if kernel_config_file variable is set
+	if [ -z "${kernel_config_file}" ]; then
+		echo "[ERROR]: Kernel defconfig file is not set. Aborting menuconfig."
+		return 1
+	fi
+
+	# Run menuconfig with the specified Kernel configuration file
+	KERNEL_DEFCONFIG=$(basename "${kernel_config_file}")
+	echo "[INFO]: Kernel menuconfig with ${KERNEL_DEFCONFIG}"
+	make ${BUILD_OPTIONS} -C "${KERNEL_SRC_DIR}" "${KERNEL_DEFCONFIG}"
+
+	# 执行 make menuconfig
+	script -q -c "make ${BUILD_OPTIONS} -C ${KERNEL_SRC_DIR} menuconfig" /dev/null
+
+	# Check if menuconfig was successful
+	if [ $? -eq 0 ]; then
+		# Run savedefconfig to save the configuration back to the original file
+		make ${BUILD_OPTIONS} -C "${KERNEL_SRC_DIR}" savedefconfig
+		dest_defconf_path="${HR_TOP_DIR}/source/kernel/arch/arm64/configs/${KERNEL_DEFCONFIG}"
+		echo "**** Saving Kernel defconfig to ${dest_defconf_path} ****"
+		cp -f "${KERNEL_SRC_DIR}/defconfig" "${dest_defconf_path}"
+	fi
+
+	# Check if savedefconfig was successful
+	if [ $? -ne 0 ]; then
+		echo "[ERROR]: savedefconfig failed. Configuration may not be saved."
+		return 1
+	fi
+
+	echo "[INFO]: Kernel menuconfig completed successfully."
+}
+
 function build_clean()
 {
     make clean
@@ -205,4 +238,6 @@ elif [ "$1" = "clean" ]; then
     build_clean
 elif [ "$1" = "distclean" ]; then
     build_distclean
+elif [ "$1" = "menuconfig" ]; then
+	kernel_menuconfig
 fi
