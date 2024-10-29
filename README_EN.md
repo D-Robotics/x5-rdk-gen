@@ -1,3 +1,5 @@
+[简体中文](./README.md) | English
+
 # Development environment setup and compilation instructions
 
 ## Overview
