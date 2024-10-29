@@ -149,6 +149,23 @@ function make_debian_deb() {
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-dtb/' "${deb_dst_dir}"/DEBIAN/control
 
+        cd ${debian_src_dir}/${pkg_name}/hobot-suspend-button
+
+        make clean || {
+           echo "make clean failed"
+           exit 1
+        }
+
+        make || {
+           echo "make failed"
+           exit 1
+        }
+
+        make install || {
+            echo "make failed"
+            exit 1
+        }
+
         cd "${debian_src_dir}"/"${pkg_name}"/debian/boot
         rm -f boot.scr
 
