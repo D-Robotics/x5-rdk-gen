@@ -178,6 +178,8 @@ function make_debian_deb() {
         mkdir -p "${boot_dest_dir}"
         cp -arf "${IMAGE_DEPLOY_DIR}"/kernel/Image  "${boot_dest_dir}"/
         cp -arf "${KERNEL_DEPLOY_DIR}"/modules/* "${deb_dst_dir}"/
+        cp -arf "${debian_src_dir}"/"${pkg_name}"/debian/boot/boot.scr "${deb_dst_dir}"/boot/
+        cp -arf "${debian_src_dir}"/"${pkg_name}"/debian/usr/bin/suspend-button "${deb_dst_dir}"/usr/bin/
 
         is_allowed=1
         ;;
