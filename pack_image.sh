@@ -161,7 +161,7 @@ function make_ubuntu_image()
     mkdir -p "${ROOTFS_BUILD_DIR}"/{home,home/root,mnt,root,usr/lib,var,media}
     mkdir -p "${ROOTFS_BUILD_DIR}"/{tftpboot,var/lib,var/volatile,dev,proc,tmp}
     mkdir -p "${ROOTFS_BUILD_DIR}"/{run,sys,userdata,app,boot/hobot,boot/config}
-    cat "${HR_LOCAL_DIR}/VERSION" > "${ROOTFS_BUILD_DIR}"/etc/version
+    echo "${RDK_IMAGE_VERSION}" > "${ROOTFS_BUILD_DIR}"/etc/version
 
     # Custom Special Modifications
     echo "Custom Special Modifications"
