@@ -149,23 +149,6 @@ function make_debian_deb() {
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-dtb/' "${deb_dst_dir}"/DEBIAN/control
 
-        cd ${debian_src_dir}/${pkg_name}/hobot-suspend-button
-
-        make clean || {
-           echo "make clean failed"
-           exit 1
-        }
-
-        make || {
-           echo "make failed"
-           exit 1
-        }
-
-        make install || {
-            echo "make failed"
-            exit 1
-        }
-
         cd "${debian_src_dir}"/"${pkg_name}"/debian/boot
         rm -f boot.scr
 
@@ -179,7 +162,6 @@ function make_debian_deb() {
         cp -arf "${IMAGE_DEPLOY_DIR}"/kernel/Image  "${boot_dest_dir}"/
         cp -arf "${KERNEL_DEPLOY_DIR}"/modules/* "${deb_dst_dir}"/
         cp -arf "${debian_src_dir}"/"${pkg_name}"/debian/boot/boot.scr "${deb_dst_dir}"/boot/
-        cp -arf "${debian_src_dir}"/"${pkg_name}"/debian/usr/bin/suspend-button "${deb_dst_dir}"/usr/bin/
 
         is_allowed=1
         ;;
@@ -241,6 +223,25 @@ function make_debian_deb() {
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-boot, udisks2/' "${deb_dst_dir}"/DEBIAN/control
 
+        cd ${debian_src_dir}/${pkg_name}/hobot-suspend-button
+
+        make clean || {
+           echo "make clean failed"
+           exit 1
+        }
+
+        make || {
+           echo "make failed"
+           exit 1
+        }
+
+        make install || {
+            echo "make failed"
+            exit 1
+        }
+
+        cp -arf "${debian_src_dir}"/"${pkg_name}"/debian/usr/bin/suspend-button "${deb_dst_dir}"/usr/bin/
+        
         is_allowed=1
         ;;
     hobot-utils)
