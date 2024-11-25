@@ -53,17 +53,17 @@ export REPO_URL='https://mirrors.tuna.tsinghua.edu.cn/git/git-repo/'
 repo init -u git@github.com:D-Robotics/x5-manifest.git -b main
 ```
 
-执行以下命令初始化开发分支仓库清单，开发分支的代码会不断新增特性与修复 bug，但是稳定性没有主分支代码高：
-
-```shell
-repo init -u git@github.com:D-Robotics/x5-manifest.git -b develop
-```
-
 执行以下命令同步代码
 
 ```shell
 repo sync
 ```
+
+:::tip
+也可以下载其他分支代码，比如，使用`-b develop`初始化`develop`分支仓库清单
+开发分支的代码会不断新增特性与修复 bug，但是稳定性没有主分支代码高
+:::
+
 
 ## 源码目录结构
 
