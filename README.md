@@ -12,27 +12,7 @@
 
 **主机编译环境要求**
 
-推荐使用 Ubuntu 操作系统，若使用其它系统版本，可能需要对编译环境做相应调整。
-
-Ubuntu 18.04 系统安装以下软件包：
-
-```shell
-sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
-                        flex python-numpy mtd-utils zlib1g-dev debootstrap \
-                        libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
-                        curl git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
-                        android-tools-fsutils mtools parted dosfstools udev rsync
-```
-
-Ubuntu 20.04 系统安装以下软件包：
-
-```shell
-sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
-                        flex python-numpy mtd-utils zlib1g-dev debootstrap \
-                        libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
-                        curl git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
-                        android-sdk-libsparse-utils android-sdk-ext4-utils mtools parted dosfstools udev rsync
-```
+推荐使用 Ubuntu 22.04 操作系统，保持和RDK X5相同的系统版本，减少因版本差异产生的依赖问题。
 
 Ubuntu 22.04 系统安装以下软件包：
 
@@ -52,68 +32,78 @@ sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc biso
 curl -fO http://archive.d-robotics.cc/toolchain/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu.tar.xz
 ```
 
-解压并安装，建议安装到 /opt 目录下，通常向 /opt 目录写数据需要 sudo 权限，例如：
+解压并安装到 /opt 目录下：
 
 ```shell
 sudo tar -xvf gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu.tar.xz -C /opt
 ```
 
-配置交叉编译工具链的环境变量：
+## 下载源码
 
+rdk-linux 相关的内核、bootloader、hobot-xxx 软件包源码都托管在 [GitHub](https://github.com/) 上。在下载代码前，请先注册、登录  [GitHub](https://github.com/)，并通过 [Generating a new SSH key and adding it to the ssh-agent](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) 方式添加开发服务器的`SSH Key`到用户设置中。
+
+首先，临时更换repo为国内源
 ```shell
-export CROSS_COMPILE=/opt/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-
-export PATH=$PATH:/opt/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/bin
-export ARCH=arm64
+export REPO_URL='https://mirrors.tuna.tsinghua.edu.cn/git/git-repo/'
 ```
 
-以上命令是临时配置环境变量，要想配置永久生效，可以把以上命令添加到环境变量文件 `~/.profile` 或者 `~/.bash_profile` 的末尾。
-
-## rdk-gen
-
-rdk-gen 用于构建适用于 RDK 的操作系统镜像。它提供了一个可扩展的框架，允许用户根据自己的需求定制和构建 RDK 的 Ubuntu 操作系统。
-
-rdk-gen提供两个主要的功能：
-
-- 构建适用于 RDK 的操作系统镜像。使用本功能下载 RDK 官方的资料，生成与官方发布的完全一样的系统镜像；在这个镜像制作方法中，用户可以预装更多需要的软件包。
-- 本仓库提供二次开发官方系统软件和应用 deb 包的方法，提供脚本程序完成所有软件源码的构建。
-
-rdk-gen 源码下载方式：
+执行以下命令初始化主线分支仓库清单 与官方发布的最新系统镜像版本对应：
 
 ```shell
-git clone https://github.com/D-Robotics/x5-rdk-gen.git
+repo init -u git@github.com:D-Robotics/x5-manifest.git -b main
 ```
+
+执行以下命令初始化开发分支仓库清单，开发分支的代码会不断新增特性与修复 bug，但是稳定性没有主分支代码高：
+
+```shell
+repo init -u git@github.com:D-Robotics/x5-manifest.git -b develop
+```
+
+执行以下命令同步代码
+
+```shell
+repo sync
+```
+
+## 源码目录结构
 
 下载完成后，rdk-gen 的主要文件、目录说明如下：
 
-| **目录**                  | **说明**                                                     |
-| ------------------------- | ------------------------------------------------------------ |
-| pack_image.sh             | 构建系统镜像的主代码入口                                     |
-| build_params              | 构建系统镜像的配置文件，指定下载 Samplefs 和 deb 包的路径、版本等信息 |
-| download_samplefs.sh      | 下载预先制作的基础 Ubuntu 根文件系统                         |
-| download_deb_pkgs.sh      | 下载 RDK 官方 debian 软件包，会被预装到系统镜像中，包括内核、多媒体库、示例代码、tros.bot 等 |
-| hobot_customize_rootfs.sh | 定制化修改 Ubuntu 文件系统，如创建用户、启用或禁止自启动项等 |
-| config                    | 存放需要放到系统镜像 /hobot/config 目录下的内容，该目录时一个 vfat 格式的分区，如果是 sd 卡启动方式，用户可以在 PC 上修改该分区的内容，如设置自启动项等。 |
-| VERSION                   | 系统镜像的版本信息                                           |
-
-当需要定制化开发系统镜像和软件包时，需要关注以下资源
-
-| **目录**     | **说明**                                                     |
-| ------------ | ------------------------------------------------------------ |
-| mk_kernel.sh | 进行内核开发时，需要使用本脚本编译内核、设备树和驱动模块     |
-| mk_debs.sh   | 进行自定义软件包开发时，需要使用本脚本生成 debian 软件包     |
-| samplefs     | 进行自定义根文件系统开发时，需要使用本目录下的 make_ubuntu_samplefs.sh 脚本定制 samplefs |
-| source       | 进行软件开发时，下载的源码会在本目录下，默认不下载源码       |
+```
+├── build_params                        # 编辑脚本，可以通过sudo ./pack_image.sh -c /build_params/[配置文件名] 选择destktop/server release/beta ，默认选择ubuntu-22.04_desktop_rdk-x5_release.conf
+├── download_deb_pkgs.sh                # 下载 RDK 官方 debian 软件包，会被预装到系统镜像中，包括内核、多媒体库、示例代码、tros.bot 等
+├── download_samplefs.sh                # 下载预先制作的基础 Ubuntu 根文件系统
+├── hobot_customize_rootfs.sh           # 定制化修改 Ubuntu 文件系统，如创建用户、启用或禁止自启动项等
+├── mk_debs.sh                          # 使用本脚本编译source目录下的源码，并生成 debian 软件包
+├── mk_kernel.sh                        # 编译内核、设备树和驱动模块
+├── pack_image.sh                       # 构建系统镜像的主代码入口
+├── samplefs                            # Ubuntu原始镜像构建，使用该目录下的 make_ubuntu_samplefs.sh 脚本定制 samplefs
+├── source                              # uboot,kernel 多媒体库、示例代码，ubuntu预装软件 等源码会在本目录下
+```
 
 ## 编译系统镜像
-
-构建适用于 RDK 的操作系统镜像，运行以下命令进行系统镜像的打包，本方法可以构建出与官方发布一样的镜像。
+构建适用于 RDK 的操作系统镜像，运行以下命令从下载服务器上的Ubuntu原始镜像和官方发布的deb包，打包成系统镜像的打包，可以构建出与官方发布一样的镜像。
 
 ```shell
-cd rdk-gen
 sudo ./pack_image.sh
 ```
 
-需要有 sudo 权限进行编译，成功后会在deploy目录下生成 `*.img` 的系统镜像文件。
+```
+Usage: ./pack_image.sh [-c config_file] [-h]
+
+Options:
+  -c config_file  Specify the configuration file to use.
+  -l              Local build, skip download debain packages
+  -h              Display this help message.
+```
+
+成功后需要关注以下目录
+```
+├── rootfs                              # desktop系统原始镜像
+├── rootfs_server                       # server系统原始镜像
+├── deb_packages                        # 从服务器下载的deb包
+├── deploy                              # 编辑结果目录，包含`*.img` 系统镜像文件，文件系统目录，内核编译中间件等
+```
 
 ### pack_image.sh 打包步骤
 
@@ -126,53 +116,7 @@ sudo ./pack_image.sh
 
 PS： pack_image.sh 支持 -l 选项完成本地编译，不会从 RDK 官方源下载 samplefs 和 debian 软件包，在深度开发 RDK 系统时，可以使用本选项进行调试。
 
-```
-sudo ./pack_image.sh -l
-```
-
 ## 深度开发 RDK 系统
-
-### 下载完整的源码
-
-rdk-linux 相关的内核、bootloader、hobot-xxx 软件包源码都托管在 [GitHub](https://github.com/) 上。在下载代码前，请先注册、登录  [GitHub](https://github.com/)，并通过 [Generating a new SSH key and adding it to the ssh-agent](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent) 方式添加开发服务器的`SSH Key`到用户设置中。
-
-执行以下命令下载主线分支代码，主线分支的代码与官方发布的最新系统镜像版本对应：
-
-```shell
-repo init -u git@github.com:D-Robotics/x5-manifest.git -b main
-```
-
-执行以下命令下载开发分支代码，开发分支的代码会不断新增特性与修复 bug，但是稳定性没有主分支代码高：
-
-```
-repo init -u git@github.com:D-Robotics/x5-manifest.git -b develop
-```
-
-使用以上命令下载代码后，在下载 rdk-gen 的同时会把 source 目录下的源码全部下载下来，源码量比较大，下载时间比较长：
-
-```
-source/
-├── bootloader
-├── hobot-audio-config
-├── hobot-boot
-├── hobot-camera
-├── hobot-configs
-├── hobot-dnn
-├── hobot-drivers
-├── hobot-dtb
-├── hobot-io
-├── hobot-io-samples
-├── hobot-kernel-headers
-├── hobot-miniboot
-├── hobot-multimedia
-├── hobot-multimedia-dev
-├── hobot-multimedia-samples
-├── hobot-spdev
-├── hobot-sp-samples
-├── hobot-utils
-├── hobot-wifi
-└── kernel
-```
 
 ### 开发前的准备
 
@@ -183,6 +127,33 @@ sudo ./pack_image.sh
 ```
 
 需要有 sudo 权限进行编译，成功后会在deploy目录下生成 `*.img` 的系统镜像文件。
+
+### 了解source目录
+
+```
+source/
+├── bootloader                         # miniboot镜像和uboot源码
+├── hobot-audio-config                 # 音频配置
+├── hobot-boot                         # 内核镜像  
+├── hobot-camera                       # 摄像头库
+├── hobot-configs                      # 系统配置
+├── hobot-display                      # mipi显示屏驱动
+├── hobot-dnn                          # 神经网络库
+├── hobot-drivers                      # bpu驱动
+├── hobot-dtb                          # dtb包
+├── hobot-io                           # IO库，工具
+├── hobot-io-samples                   # IO示例
+├── hobot-kernel-headers               # 内核头文件
+├── hobot-miniboot                     # miniboot固件
+├── hobot-multimedia                   # 多媒体库
+├── hobot-multimedia-dev               # 多媒体库头文件
+├── hobot-multimedia-samples           # 多媒体示例
+├── hobot-spdev                        # 封装的多媒体库
+├── hobot-sp-samples                   # 多媒体示例，C，Python
+├── hobot-utils                        # 工具库
+├── hobot-wifi                         # wif配置
+└── kernel                             # linux内核源码
+```
 
 ### 编译 kernel
 
@@ -215,6 +186,7 @@ The debian package named by 'help' is not supported, please check the input para
     hobot-dtb
     hobot-configs
     hobot-utils
+    hobot-display
     hobot-wifi
     hobot-io
     hobot-io-samples
@@ -262,12 +234,9 @@ RDK 的最小启动镜像一般会由 RDK 官方进行维护发布，可以从 [
 cd source/bootloader/build
 ./xbuild.sh lunch
 
-You're building on #127~20.04.1-Ubuntu SMP Thu Jul 11 15:36:12 UTC 2024
 Lunch menu... pick a combo:
-      0. rdk/x5/board_x5_evb_ubuntu_nand_sdcard_debug_config.mk
-      1. rdk/x5/board_x5_evb_ubuntu_nand_sdcard_release_config.mk
-      2. rdk/x5/board_x5_rdk_ubuntu_nand_sdcard_debug_config.mk
-      3. rdk/x5/board_x5_rdk_ubuntu_nand_sdcard_release_config.mk
+      0. rdk/x5/board_x5_rdk_ubuntu_nand_sdcard_debug_config.mk
+      1. rdk/x5/board_x5_rdk_ubuntu_nand_sdcard_release_config.mk
 Which would you like? [0] :
 ```
 
@@ -279,18 +248,18 @@ lunch 命令还支持以下两种使用方式：
 - 带板级配置文件名指定板级配置
 
 ```shell
-$ ./xbuild.sh lunch 2
+$ ./xbuild.sh lunch 0
 
 You're building on #127~20.04.1-Ubuntu SMP Thu Jul 11 15:36:12 UTC 2024
-You are selected board config: rdk/x5/board_x5_rdk_ubuntu_nand_sdcard_release_config.mk
+You are selected board config: rdk/x5/board_x5_rdk_ubuntu_nand_sdcard_debug_config.mk
 
-$ ./xbuild.sh lunch board_ubuntu_nand_sdcard_config.mk
+$ ./xbuild.sh lunch board_x5_rdk_ubuntu_nand_sdcard_debug_config.mk
 
 You're building on #127~20.04.1-Ubuntu SMP Thu Jul 11 15:36:12 UTC 2024
-You are selected board config: rdk/x5/board_x5_rdk_ubuntu_nand_sdcard_release_config.mk
+You are selected board config: rdk/x5/board_x5_rdk_ubuntu_nand_sdcard_debug_config.mk
 ```
 
-#### 编译 miniboot
+#### 编译 nand_disk.img
 
 进入到 build 目录下，执行 xbuild.sh 进行整体编译：
 
@@ -299,7 +268,7 @@ cd source/bootloader/build
 ./xbuild.sh
 ```
 
-编译成功后，会在编译镜像输出目录（out/product） 目录下生成 **miniboot_nand_disk.img**，uboot.img， miniboot_all.img 等镜像文件。其中 **miniboot_nand_disk.img** 即最小启动镜像文件。
+编译成功后，会在编译镜像输出目录（out/product） 目录下生成 **nand_disk.img**，uboot.img， miniboot_all.img 等镜像文件。其中 **nand_disk.img** 即最小启动镜像文件。
 
 ## Ubuntu 文件系统制作
 
@@ -349,12 +318,6 @@ chroot，即 change root directory (更改 root 目录)。在 linux 系统中，
 parted命令是由GNU组织开发的一款功能强大的磁盘分区和分区大小调整工具，与fdisk不同，它支持调整分区的大小。作为一种设计用于Linux的工具，它没有构建成处理与fdisk关联的多种分区类型，但是，它可以处理最常见的分区格式，包括：ext2、ext3、fat16、fat32、NTFS、ReiserFS、JFS、XFS、UFS、HFS以及Linux交换分区。
 
 ### 制作 Ubuntu rootfs 脚本代码
-
-下载`rdk-gen`源码：
-
-```shell
-git clone https://github.com/D-Robotics/x5-rdk-gen.git
-```
 
 执行以下命令生成ubuntu文件系统：
 
