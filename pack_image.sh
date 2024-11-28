@@ -283,8 +283,6 @@ function make_ubuntu_image()
     unmount_image "${IMG_FILE}"
     rm -rf "${ROOTFS_DIR}"
 
-    md5sum "${IMG_FILE}" > "${IMG_FILE}".md5sum
-
     echo "Make Ubuntu Image successfully"
 
     exit 0
