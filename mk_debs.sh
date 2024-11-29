@@ -333,6 +333,7 @@ function make_debian_deb() {
 
         echo "cp -af ${hb_dtb_tool_dir}/*pi-config ${deb_dst_dir}/usr/bin"
         cp -af "${hb_dtb_tool_dir}"/*pi-config "${deb_dst_dir}"/usr/bin
+        cp -arf "${debian_src_dir}"/"${pkg_name}"/debian/usr/bin/hb_gpioinfo "${deb_dst_dir}"/usr/bin
 
         if [ -d "${debian_src_dir}"/"${pkg_name}"/hb_gpio_py/hobot-gpio ];then
             echo "cp -arf ${debian_src_dir}/${pkg_name}/hb_gpio_py/hobot-gpio ${deb_dst_dir}/usr/lib/"
