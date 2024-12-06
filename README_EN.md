@@ -12,26 +12,7 @@ Cross-compilation refers to developing and building software on a host machine a
 
 **Host Compilation Environment Requirements**
 
-It is recommended to use the Ubuntu operating system. If using other system versions, the compilation environment may require adjustments.
-
-Install the following packages on Ubuntu 18.04:
-
-```shell
-sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
-                        flex python-numpy mtd-utils zlib1g-dev debootstrap \
-                        libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
-                        curl git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
-                        android-tools-fsutils mtools parted dosfstools udev rsync
-```
-Install the following packages on Ubuntu 20.04:
-
-```shell
-sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
-                        flex python-numpy mtd-utils zlib1g-dev debootstrap \
-                        libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
-                        curl git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
-                        android-sdk-libsparse-utils android-sdk-ext4-utils mtools parted dosfstools udev rsync
-```
+We recommend using Ubuntu 22.04 operating system to maintain the same system version as RDK X5 and reduce dependency issues caused by version differences.
 
 Install the following packages on Ubuntu 22.04:
 
@@ -57,62 +38,63 @@ Extract and install the toolchain, preferably to the `/opt` directory. Writing d
 sudo tar -xvf gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu.tar.xz -C /opt
 ```
 
-Configure the environment variables for the cross-compilation toolchain:
+## Downloading the Complete Source Code
+
+The kernel, bootloader, and `hobot-xxx` software package source codes related to `rdk-linux` are hosted on [GitHub](https://github.com/). Before downloading the code, please register and log in to [GitHub](https://github.com/), and add the `SSH Key` of the development server to your user settings as described in [Generating a new SSH key and adding it to the ssh-agent](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent).
+
+Execute the following command to initialize the main branch:
 
 ```shell
-export CROSS_COMPILE=/opt/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-
-export PATH=$PATH:/opt/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/bin
-export ARCH=arm64
+repo init -u git@github.com:D-Robotics/x5-manifest.git -b main
 ```
 
-These commands temporarily configure the environment variables. To make them permanent, add the above commands to the end of the environment variable files `~/.profile` or `~/.bash_profile`.
-
-## rdk-gen
-
-`rdk-gen` is used to build operating system images suitable for RDK. It provides an extensible framework allowing users to customize and build Ubuntu operating systems for RDK according to their needs.
-
-`rdk-gen` offers two main functionalities:
-
-- **Building Operating System Images for RDK:** This function downloads official RDK materials and generates a system image identical to the one officially released. Users can pre-install additional software packages in this image.
-- **Secondary Development of Official System Software and Applications:** This repository provides methods for secondary development of official system software and application Debian packages, along with scripts to complete the build of all software source code.
-
-Download the `rdk-gen` source code using the following command:
-
+```shell
+repo sync
 ```
-git clone https://github.com/D-Robotics/x5-rdk-gen.git
-```
+
+You can also download other branch code, such as using ` -b develop ` to initialize the ` develop ` branch repository list. The code for developing branches will continuously add features and fix bugs, but its stability is not as high as that of the main branch code
+
+## Source code directory structure
 
 After downloading, the main files and directories of `rdk-gen` are as follows:
 
-| **Directory**               | **Description**                                              |
-| --------------------------- | ------------------------------------------------------------ |
-| `pack_image.sh`             | The main entry point for building system images              |
-| `build_params`              | Configuration file for building system images, specifying paths, versions, and other information for downloading Samplefs and Debian packages |
-| `download_samplefs.sh`      | Downloads the pre-made Ubuntu root filesystem                |
-| `download_deb_pkgs.sh`      | Downloads RDK official Debian packages to be pre-installed in the system image, including the kernel, multimedia libraries, sample code, tros.bot, etc. |
-| `hobot_customize_rootfs.sh` | Customizes the Ubuntu filesystem, such as creating users, enabling or disabling startup items, etc. |
-| `config`                    | Stores content to be placed in the `/hobot/config` directory of the system image. This directory is a vfat partition, which can be modified on a PC if the system boots from an SD card, such as setting startup items. |
-| `VERSION`                   | Version information of the system image                      |
-
-When customizing the system image and software packages, pay attention to the following resources:
-
-| **Directory**  | **Description**                                              |
-| -------------- | ------------------------------------------------------------ |
-| `mk_kernel.sh` | Used when developing the kernel, this script compiles the kernel, device tree, and driver modules |
-| `mk_debs.sh`   | Used when developing custom software packages, this script generates Debian packages |
-| `samplefs`     | Used when developing custom root filesystems, this directory contains the `make_ubuntu_samplefs.sh` script for customizing Samplefs |
-| `source`       | The directory where downloaded source code is stored, which by default does not download source code |
+```
+├── build_params                        # Configuration file for building system images，you can use sudo ./pack_image.sh -c /build_params/[Configuration file],ubuntu-22.04_desktop_rdk-x5_release.conf default
+├── download_deb_pkgs.sh                # Downloads RDK official Debian packages to be pre-installed in the system image, including the kernel, multimedia libraries, sample code, tros.bot, etc.
+├── download_samplefs.sh                # Downloads the pre-made Ubuntu root filesystem
+├── hobot_customize_rootfs.sh           # Customizes the Ubuntu filesystem, such as creating users, enabling or disabling startup items, etc.
+├── mk_debs.sh                          # Used when developing custom software packages, this script generates Debian packages
+├── mk_kernel.sh                        # Used when developing the kernel, this script compiles the kernel, device tree, and driver modules
+├── pack_image.sh                       # The main entry point for building system images
+├── samplefs                            # Used when developing custom root filesystems, this directory contains the `make_ubuntu_samplefs.sh` script for customizing Samplef
+├── source                              # The directory where downloaded source code is stored, which by default does not download source code
+```
 
 ## Compiling System Images
 
 To build operating system images for RDK, run the following command to package the system image. This method can produce an image identical to the one officially released.
 
-```
-cd rdk-gen
+```shell
 sudo ./pack_image.sh
 ```
 
-`sudo` permissions are required for compilation. Upon success, the system image file with the `*.img` suffix will be generated in the `deploy` directory.
+```
+Usage: ./pack_image.sh [-c config_file] [-h]
+
+Options:
+  -c config_file  Specify the configuration file to use.
+  -l              Local build, skip download debain packages
+  -h              Display this help message.
+```
+
+After success, you need to pay attention to the following directory
+
+```
+├── rootfs                              # desktop system original image
+├── rootfs_server                       # server system original image
+├── deb_packages                        # The deb package downloaded from the server
+├── deploy                              # Edit result directory, including ` *. img ` system image files, file system directories, kernel compilation middleware, etc
+```
 
 ### Steps for `pack_image.sh`
 
@@ -131,48 +113,6 @@ sudo ./pack_image.sh -l
 
 ## Advanced RDK System Development
 
-### Downloading the Complete Source Code
-
-The kernel, bootloader, and `hobot-xxx` software package source codes related to `rdk-linux` are hosted on [GitHub](https://github.com/). Before downloading the code, please register and log in to [GitHub](https://github.com/), and add the `SSH Key` of the development server to your user settings as described in [Generating a new SSH key and adding it to the ssh-agent](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent).
-
-To download the mainline branch code, which corresponds to the latest official system image version, run:
-
-```
-repo init -u git@github.com:D-Robotics/x5-manifest.git -b main
-```
-
-To download the development branch code, which continually adds new features and bug fixes but may not be as stable as the main branch, run:
-
-```
-repo init -u git@github.com:D-Robotics/x5-manifest.git -b develop
-```
-
-When using the above commands to download the code, the `rdk-gen` repository and all source codes under the `source` directory will be downloaded, which may take some time due to the large volume of source code.
-
-```
-source/
-├── bootloader
-├── hobot-audio-config
-├── hobot-boot
-├── hobot-camera
-├── hobot-configs
-├── hobot-dnn
-├── hobot-drivers
-├── hobot-dtb
-├── hobot-io
-├── hobot-io-samples
-├── hobot-kernel-headers
-├── hobot-miniboot
-├── hobot-multimedia
-├── hobot-multimedia-dev
-├── hobot-multimedia-samples
-├── hobot-spdev
-├── hobot-sp-samples
-├── hobot-utils
-├── hobot-wifi
-└── kernel
-```
-
 ### Preparation Before Development
 
 Before starting actual development, it's necessary to complete a system image build. This process involves downloading the required root file system and the dependent official `.deb` packages. Once the system build is complete, the extracted root file system will contain the header files and libraries needed for application packages.
@@ -182,6 +122,33 @@ sudo ./pack_image.sh
 ```
 
 You need `sudo` privileges to compile. Upon successful completion, a system image file with the `*.img` extension will be generated in the `deploy` directory.
+
+### Understand the source directory
+
+```
+source/
+├── bootloader                         # miniboot image and uboot source code
+├── hobot-audio-config                 # Audio Configuration
+├── hobot-boot                         # Kernel Image  
+├── hobot-camera                       # Camera library
+├── hobot-configs                      # System Configuration
+├── hobot-display                      # MiPi display driver
+├── hobot-dnn                          # Neural Network Library
+├── hobot-drivers                      # BPU driver
+├── hobot-dtb                          # dtb
+├── hobot-io                           # IO Library, Tools
+├── hobot-io-samples                   # IO examples
+├── hobot-kernel-headers               # Kernel header files
+├── hobot-miniboot                     # miniboot firmware
+├── hobot-multimedia                   # Multimedia Library
+├── hobot-multimedia-dev               # Multimedia library header file
+├── hobot-multimedia-samples           # Multimedia examples
+├── hobot-spdev                        # Encapsulated Multimedia Library
+├── hobot-sp-samples                   # Multimedia examples, C, Python
+├── hobot-utils                        # Tool Library
+├── hobot-wifi                         # wif configuration
+└── kernel                             # kernel source code
+```
 
 ### Compiling the Kernel
 
@@ -214,6 +181,7 @@ The debian package named by 'help' is not supported, please check the input para
     hobot-dtb
     hobot-configs
     hobot-utils
+    hobot-display
     hobot-wifi
     hobot-io
     hobot-io-samples
@@ -263,14 +231,31 @@ cd source/bootloader/build
 
 You're building on #127~20.04.1-Ubuntu SMP Thu Jul 11 15:36:12 UTC 2024
 Lunch menu... pick a combo:
-      0. rdk/x5/board_x5_evb_ubuntu_nand_sdcard_debug_config.mk
-      1. rdk/x5/board_x5_evb_ubuntu_nand_sdcard_release_config.mk
-      2. rdk/x5/board_x5_rdk_ubuntu_nand_sdcard_debug_config.mk
-      3. rdk/x5/board_x5_rdk_ubuntu_nand_sdcard_release_config.mk
+      0. rdk/x5/board_x5_rdk_ubuntu_nand_sdcard_debug_config.mk
+      1. rdk/x5/board_x5_rdk_ubuntu_nand_sdcard_release_config.mk
 Which would you like? [0] :
 ```
 
 Select the board configuration file according to the prompt. The preset configuration files above are tailored to the hardware configurations of different development boards.
+
+The 'lunch' command also supports the following two usage methods:
+
+- Specify board level configuration with numerical parameters
+- Specify board level configuration with board level configuration file name
+
+```shell
+$ ./xbuild.sh lunch 0
+
+You're building on #127~20.04.1-Ubuntu SMP Thu Jul 11 15:36:12 UTC 2024
+You are selected board config: rdk/x5/board_x5_rdk_ubuntu_nand_sdcard_debug_config.mk
+
+$ ./xbuild.sh lunch board_x5_rdk_ubuntu_nand_sdcard_debug_config.mk
+
+You're building on #127~20.04.1-Ubuntu SMP Thu Jul 11 15:36:12 UTC 2024
+You are selected board config: rdk/x5/board_x5_rdk_ubuntu_nand_sdcard_debug_config.mk
+```
+
+After successful compilation, image files such as **nand-disk.img**, uboot.img, miniboot. all. img will be generated in the output directory (out/product) of the compiled image. Among them, **nand-disk.img** is the minimum boot image file.
 
 #### Compiling Miniboot
 
