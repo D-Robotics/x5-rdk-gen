@@ -37,6 +37,7 @@ xfce4-terminal
 xserver-xorg-video-fbdev
 xdotool
 xinput
+unclutter
 xubuntu-desktop
 mesa-common-dev
 libgbm-dev
