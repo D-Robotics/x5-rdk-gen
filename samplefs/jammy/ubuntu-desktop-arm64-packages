@@ -35,6 +35,8 @@ xfce4-pulseaudio-plugin
 xfce4-taskmanager
 xfce4-terminal
 xserver-xorg-video-fbdev
+xdotool
+xinput
 xubuntu-desktop
 mesa-common-dev
 libgbm-dev
