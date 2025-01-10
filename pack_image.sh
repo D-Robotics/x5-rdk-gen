@@ -87,6 +87,13 @@ function install_deb_chroot()
     local package=$1
     local dst_dir=$2
 
+    if [[ $package == *xserver* ]]; then
+        if ! chroot "${dst_dir}" /bin/bash -c "dpkg -l | grep xserver"; then
+            echo "[INFO] rootfs do not have xserver, so do not install" "${package}"
+            return 0
+        fi
+    fi
+
     cd "${dst_dir}/app/hobot_debs"
     echo "[INFO] Installing" "${package}"
     depends=$(dpkg-deb -f "${package}" Depends | sed 's/([^()]*)//g')
