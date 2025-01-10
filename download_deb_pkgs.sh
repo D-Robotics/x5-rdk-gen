@@ -62,6 +62,7 @@ download_file()
 get_download_pkg_list()
 {
     pkg_list=($@)
+    search_line=10;
 
     # Loop through each package name in the list
     for pkg_name in "${pkg_list[@]}"
@@ -72,20 +73,25 @@ get_download_pkg_list()
         fi
 
         # Get the latest version number from the Packages file
-        VERSION=$(cat Packages | awk -v pkg="${pkg_name}" '$1 == "Package:" && $2 == pkg {getline; print}' | awk '{print $2}' | sort -V | tail -n1)
-        FILENAME=$(grep -A 10 -E "^Package: ${pkg_name}$" Packages | \
-            grep -A 9 -B 1 -E "Version: ${VERSION}$" | \
+        VERSION=$(cat Packages | awk -v pkg="${pkg_name}" '$1 == "Package:" && $2 == pkg {while (getline) {if ($1 == "Version:") {print $2;break;}}}' | sort -V | tail -n1)
+        if [[ $pkg_name == *xserver* ]]; then
+            search_line=20
+        else
+            search_line=10
+        fi
+        FILENAME=$(grep -A ${search_line} -E "^Package: ${pkg_name}$" Packages | \
+            grep -A $((search_line - 1)) -B 1 -E "Version: ${VERSION}$" | \
             grep '^Filename: ' | cut -d ' ' -f 2 | \
             sort -V | tail -n1)
-        MD5SUM=$(grep -A 10 -B 1 -E "Package: ${pkg_name}$" Packages | \
-            grep -A 9 -B 1 -E "Version: ${VERSION}$" | \
+        MD5SUM=$(grep -A ${search_line} -B 1 -E "Package: ${pkg_name}$" Packages | \
+            grep -A $((search_line - 1)) -B 1 -E "Version: ${VERSION}$" | \
             grep '^MD5sum: ' | cut -d ' ' -f 2 | \
             sort -V | tail -n1)
-        DEPENDS=$(grep -A 10 -B 1 -E "Package: ${pkg_name}$" Packages | \
-          grep -A 9 -B 1 -E "Version: ${VERSION}$" | \
-          grep '^Depends: ' | \
-          cut -d ' ' -f 2- | \
-          sed 's/,/ /g' || true)
+        DEPENDS=$(grep -A ${search_line} -B 1 -E "Package: ${pkg_name}$" Packages | \
+            grep -A $((search_line - 1)) -B 1 -E "Version: ${VERSION}$" | \
+            grep '^Depends: ' | \
+            cut -d ' ' -f 2- | \
+            sed 's/,/ /g' || true)
         # echo "Package: ${pkg_name} Version: ${VERSION} FILENAME: ${FILENAME} MD5SUM: ${MD5SUM} DEPENDS: ${DEPENDS}"
 
         if [[ -z "$VERSION" ]]; then
@@ -102,8 +108,8 @@ get_download_pkg_list()
         # Add ${pkg_name},${PKG_FILE},${PKG_URL},${MD5SUM} into download_pkg_list
         download_pkg_list+=("${pkg_name},${VERSION},${PKG_FILE},${PKG_URL},${MD5SUM}")
 
-        # Filter dependencies to include only those that start with "hobot" or "tros"
-        DEPENDS=$(echo "${DEPENDS}" | awk '{for(i=1;i<=NF;i++) if($i ~ /^hobot/ || $i ~ /^tros/) print $i}' | tr '\n' ' ')
+        # Filter dependencies to include only those that start with "hobot" "tros" "xserver"
+        DEPENDS=$(echo "${DEPENDS}" | awk '{for(i=1;i<=NF;i++) if($i ~ /^hobot/ || $i ~ /^tros/ || $i ~ /^xserver/) print $i}' | tr '\n' ' ')
 
         # Remove leading and trailing whitespace
         DEPENDS=$(echo "${DEPENDS}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
@@ -136,6 +142,11 @@ download_deb_pkgs()
         for file in $FILES; do
             file_version="${file#${pkg_name}_}"
             file_version="${file_version%_arm64.deb}"
+
+            if [[ $pkg_name == *xserver* ]]; then
+                file_version="${file_version%_all.deb}"
+                file_version="2:${file_version}"
+            fi
 
             if [[ $file_version < $VERSION ]]; then
                 echo "Deleting older version of ${file}"

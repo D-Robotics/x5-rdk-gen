@@ -17,6 +17,7 @@ dos2unix
 dosfstools
 e2fsprogs
 ethtool
+exfat-fuse
 ffmpeg
 flex
 fonts-wqy-microhei
@@ -26,6 +27,7 @@ iperf3
 iputils-ping
 isc-dhcp-client
 iw
+kpartx 
 language-pack-gnome-zh-hans
 libaio1
 libasio-dev
