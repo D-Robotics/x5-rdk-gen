@@ -115,7 +115,7 @@ function install_packages()
     echo "Start install hobot packages"
 
     cd "${dst_dir}/app/hobot_debs"
-    deb_list=$(ls)
+    deb_list=$(ls | grep "^xserver" && ls | grep -v "^xserver")
 
     for deb_name in ${deb_list[@]}
     do
