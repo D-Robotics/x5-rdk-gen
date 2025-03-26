@@ -198,10 +198,23 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: /' "${deb_dst_dir}"/DEBIAN/control
+        cd "${debian_src_dir}"/"${pkg_name}"/debian/boot/overlays
+
+        make clean || {
+           echo "make clean failed"
+           exit 1
+        }
+
+        make || {
+            echo "make failed"
+            exit 1
+        }
 
         dtb_dest_dir=${deb_dst_dir}/boot/hobot
         mkdir -p "${dtb_dest_dir}"
         cp -arf "${IMAGE_DEPLOY_DIR}"/kernel/dtb/* "${dtb_dest_dir}"/
+        cp -arf "${debian_src_dir}"/"${pkg_name}"/debian/boot/overlays/*.dtbo "${deb_dst_dir}"/boot/overlays
+        rm "${deb_dst_dir}"/boot/overlays/Makefile
 
         is_allowed=1
         ;;
