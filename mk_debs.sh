@@ -160,6 +160,7 @@ function make_debian_deb() {
         boot_dest_dir=${deb_dst_dir}/boot
         mkdir -p "${boot_dest_dir}"
         cp -arf "${IMAGE_DEPLOY_DIR}"/kernel/Image  "${boot_dest_dir}"/
+        cp -arf "${IMAGE_DEPLOY_DIR}"/kernel/Image-rt  "${boot_dest_dir}"/ || true
         cp -arf "${KERNEL_DEPLOY_DIR}"/modules/* "${deb_dst_dir}"/
         cp -arf "${debian_src_dir}"/"${pkg_name}"/debian/boot/boot.scr "${deb_dst_dir}"/boot/
 
