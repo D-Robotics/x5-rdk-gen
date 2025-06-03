@@ -27,18 +27,18 @@ KERNEL_BUILD_DIR=${IMAGE_DEPLOY_DIR}/kernel
     && N="$((($(cat /proc/cpuinfo |grep 'processor'|wc -l)) - 2))" || N=1
 
 # 默认使用emmc配置，对于nor、nand需要使用另外的配置文件
-kernel_config_file=hobot_x5_rdk_ubuntu_defconfig
+kernel_config_file=hobot_x5_rdk_ubuntu_rt_defconfig
 
-KERNEL_SRC_DIR=${HR_TOP_DIR}/source/kernel
+KERNEL_SRC_DIR=${HR_TOP_DIR}/source/kernel-rt
 
 kernel_version=$(awk "/^VERSION =/{print \$3}" "${KERNEL_SRC_DIR}"/Makefile)
 kernel_patch_lvl=$(awk "/^PATCHLEVEL =/{print \$3}" "${KERNEL_SRC_DIR}"/Makefile)
 kernel_sublevel=$(awk "/^SUBLEVEL =/{print \$3}" "${KERNEL_SRC_DIR}"/Makefile)
-export KERNEL_VER="${kernel_version}.${kernel_patch_lvl}.${kernel_sublevel}"
+export KERNEL_VER="${kernel_version}.${kernel_patch_lvl}.${kernel_sublevel}-rt28"
 
 function make_kernel_headers() {
     SRCDIR=${KERNEL_SRC_DIR}
-    HDRDIR="${KERNEL_BUILD_DIR}"/kernel_headers/usr/src/linux-headers-6.1.83
+    HDRDIR="${KERNEL_BUILD_DIR}"/kernel_headers/usr/src/linux-headers-6.1.83-rt
     mkdir -p "${HDRDIR}"
 
     cd "${SRCDIR}"
@@ -112,7 +112,7 @@ function make_kernel_headers() {
 
 function build_pre_modules()
 {
-    cd "${HR_TOP_DIR}"/source/hobot-drivers/bpu-hw_io
+    cd "${HR_TOP_DIR}"/source/hobot-drivers/bpu-hw_io_rt
     KO_INSTALL_DIR="${KERNEL_BUILD_DIR}"/modules
     make INSTALL_MOD_PATH="${KO_INSTALL_DIR}" \
         INSTALL_MOD_STRIP=1 || {
@@ -172,13 +172,7 @@ function build_all()
     rm -rf "${KO_INSTALL_DIR}"/lib/modules/"${KERNEL_VER}"/{build,source}
 
     # 拷贝 内核 Image
-    cp -f "arch/arm64/boot/Image" "${KERNEL_BUILD_DIR}"/
-
-    # 生成 dtb 镜像
-    mkdir -p "${KERNEL_BUILD_DIR}"/dtb
-    cp -arf arch/arm64/boot/dts/hobot/*.dtb "${KERNEL_BUILD_DIR}"/dtb
-    cp -arf arch/arm64/boot/dts/hobot/*.dts "${KERNEL_BUILD_DIR}"/dtb
-    cp -arf arch/arm64/boot/dts/hobot/*.dtsi "${KERNEL_BUILD_DIR}"/dtb
+    cp -f "arch/arm64/boot/Image" "${KERNEL_BUILD_DIR}"/Image-rt
 
     # 生成内核头文件
     make_kernel_headers
