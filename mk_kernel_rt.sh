@@ -29,7 +29,15 @@ KERNEL_BUILD_DIR=${IMAGE_DEPLOY_DIR}/kernel
 # 默认使用emmc配置，对于nor、nand需要使用另外的配置文件
 kernel_config_file=hobot_x5_rdk_ubuntu_rt_defconfig
 
+# 建立kernel-rt目录，并打上实时内核补丁
 KERNEL_SRC_DIR=${HR_TOP_DIR}/source/kernel-rt
+if [ -n "$KERNEL_SRC_DIR" ] && [ ! -d "$KERNEL_SRC_DIR" ]; then
+    echo "cp kernel to kernel-rt and apply patch..."
+    cp -rf "${HR_TOP_DIR}/source/kernel" "$KERNEL_SRC_DIR" || exit 1
+    cd "$KERNEL_SRC_DIR" || exit 1
+    patch -p1 < patch-6.1.83-rt28.patch || exit 1
+    cd - || exit 1
+fi
 
 kernel_version=$(awk "/^VERSION =/{print \$3}" "${KERNEL_SRC_DIR}"/Makefile)
 kernel_patch_lvl=$(awk "/^PATCHLEVEL =/{print \$3}" "${KERNEL_SRC_DIR}"/Makefile)
