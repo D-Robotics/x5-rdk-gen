@@ -43,7 +43,7 @@ get_package_list()
 # The default version is Ubuntu Desktop
 ADD_PACKAGE_LIST="$(get_package_list "base") $(get_package_list "server") $(get_package_list "desktop") "
 ubuntufs_src="${LOCAL_DIR}/desktop"
-samplefs_version="v3.0.3"
+samplefs_version="v3.0.4"
 tar_file=${ubuntufs_src}/samplefs_desktop_${RELEASE}-${samplefs_version}.tar.gz
 
 
