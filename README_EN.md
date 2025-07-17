@@ -21,7 +21,7 @@ sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc biso
                         flex python3-numpy mtd-utils zlib1g-dev debootstrap \
                         libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
                         curl repo git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
-                        android-sdk-libsparse-utils mtools parted dosfstools udev rsync
+                        android-sdk-libsparse-utils mtools parted dosfstools udev rsync device-tree-compiler u-boot-tools
 ```
 
 **Install the cross-compilation toolchain**
