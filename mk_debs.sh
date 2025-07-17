@@ -132,7 +132,6 @@ function make_debian_deb() {
 
     echo "start ${FUNCNAME}: ${deb_dst_dir}/${deb_name}.deb"
 
-
     is_allowed=0
     case ${pkg_name} in
     hobot-boot)
@@ -148,6 +147,9 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-dtb/' "${deb_dst_dir}"/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
+        sed -i "s/^Description:.*/&\\n Kernel Commit: $(git -C "${debian_src_dir}/kernel" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
         cd "${debian_src_dir}"/"${pkg_name}"/debian/boot
         rm -f boot.scr
@@ -182,6 +184,9 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-boot/' "${deb_dst_dir}"/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
+        sed -i "s/^Description:.*/&\\n Kernel Commit: $(git -C "${debian_src_dir}/kernel" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
         cp -arf "${IMAGE_DEPLOY_DIR}"/kernel/kernel_headers/* "${deb_dst_dir}"/
         is_allowed=1
@@ -199,6 +204,10 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: /' "${deb_dst_dir}"/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
+        sed -i "s/^Description:.*/&\\n Kernel Commit: $(git -C "${debian_src_dir}/kernel" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
+
         cd "${debian_src_dir}"/"${pkg_name}"/debian/boot/overlays
 
         make clean || {
@@ -236,6 +245,8 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-boot, udisks2/' "${deb_dst_dir}"/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
         cd ${debian_src_dir}/${pkg_name}/hobot-suspend-button
 
@@ -265,6 +276,9 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-boot/' "${deb_dst_dir}"/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
+
         cd "${debian_src_dir}"/"${pkg_name}"/src
 
         make clean || {
@@ -293,6 +307,9 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-boot,hobot-dtb/' "${deb_dst_dir}"/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
+
         cd "${debian_src_dir}"/"${pkg_name}"/debian/boot/overlays
 
         make clean || {
@@ -316,6 +333,8 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: /' "${deb_dst_dir}"/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
         is_allowed=1
         ;;
@@ -326,6 +345,8 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-boot/' "${deb_dst_dir}"/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
         mkdir -p "${deb_dst_dir}"/usr/bin
         mkdir -p $deb_dst_dir/usr/hobot/bin/
@@ -382,6 +403,8 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-io/' "${deb_dst_dir}"/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
         is_allowed=1
         ;;
@@ -392,6 +415,8 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-boot/' "${deb_dst_dir}"/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
         is_allowed=1
         ;;
@@ -402,6 +427,8 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-multimedia/' "${deb_dst_dir}"/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
         cp -ar "${debian_src_dir}"/"${pkg_name}"/usr "${deb_dst_dir}"/
 
@@ -414,6 +441,9 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-boot/' "${deb_dst_dir}"/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
+
         cd "${debian_src_dir}"/"${pkg_name}"/drivers/sensor
 
         make clean || {
@@ -445,6 +475,8 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-boot/' "${deb_dst_dir}"/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
         is_allowed=1
         ;;
@@ -455,6 +487,8 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-multimedia,hobot-camera,hobot-dnn/' "${deb_dst_dir}"/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
         cd "${debian_src_dir}"/"${pkg_name}"
 
@@ -483,6 +517,8 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-spdev,hobot-models-basic/' "${deb_dst_dir}"/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
         is_allowed=1
         ;;
@@ -493,6 +529,8 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-multimedia-dev,hobot-multimedia/' "${deb_dst_dir}"/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
         is_allowed=1
         ;;
@@ -503,6 +541,9 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-boot,hobot-dtb/' "${deb_dst_dir}"/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
+
         cd "${debian_src_dir}"/"${pkg_name}"/debian/boot/overlays
 
         make clean || {
@@ -534,6 +575,10 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: /' "${deb_dst_dir}"/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
+        sed -i "s/^Description:.*/&\\n Bootloader Commit: $(git -C "${debian_src_dir}/bootloader" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
+        sed -i "s/^Description:.*/&\\n Uboot Commit: $(git -C "${debian_src_dir}/bootloader/uboot" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
         is_allowed=1
         ;;
