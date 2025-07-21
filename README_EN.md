@@ -18,7 +18,7 @@ Install the following packages on Ubuntu 22.04:
 
 ```shell
 sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
-                        flex python3-numpy mtd-utils zlib1g-dev debootstrap \
+                        flex python3-numpy python3-pip mtd-utils zlib1g-dev debootstrap \
                         libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
                         curl repo git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
                         android-sdk-libsparse-utils mtools parted dosfstools udev rsync device-tree-compiler u-boot-tools ccache
@@ -28,7 +28,7 @@ Install the following packages on Ubuntu 18.04:
 
 ```shell
 sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
-                        flex python-numpy mtd-utils zlib1g-dev debootstrap \
+                        flex python-numpy python3-pip mtd-utils zlib1g-dev debootstrap \
                         libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
                         curl git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
                         android-tools-fsutils mtools parted dosfstools udev rsync device-tree-compiler u-boot-tools ccache
@@ -38,7 +38,7 @@ Install the following packages on Ubuntu 20.04:
 
 ```shell
 sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
-                        flex python-numpy mtd-utils zlib1g-dev debootstrap \
+                        flex python-numpy python3-pip mtd-utils zlib1g-dev debootstrap \
                         libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
                         curl git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
                         android-sdk-libsparse-utils android-sdk-ext4-utils mtools parted dosfstools udev rsync device-tree-compiler u-boot-tools ccache
