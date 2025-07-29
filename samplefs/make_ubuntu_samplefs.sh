@@ -8,7 +8,7 @@ if [ "${this_user}" != "root" ]; then
 	exit 1
 fi
 
-BUILD_USER=$(logname)
+BUILD_USER=$(echo $SUDO_USER)
 echo "current build user:${BUILD_USER}."
 LOCAL_DIR="$( cd "$( dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd )"
 
@@ -27,7 +27,7 @@ apt_extra="-o Acquire::http::Proxy=\"http://localhost:3142\""
 PYTHON_PACKAGE_LIST="numpy==1.26.4 opencv-python pySerial i2cdev spidev matplotlib pillow \
 websocket websockets lark-parser netifaces google protobuf==3.20.1 "
 
-DEBOOTSTRAP_LIST="systemd sudo locales apt-utils init dbus kmod udev bash-completion ntp libjsoncpp-dev libjson-c-dev rapidjson-dev libgpiod2 libgpiod-dev libdrm-dev libevent-dev kcapi-tools libkcapi-dev libminizip-dev libhidapi-libusb0 can-utils dnsmasq"
+DEBOOTSTRAP_LIST="systemd sudo locales apt-utils init dbus kmod udev bash-completion ntp libjsoncpp-dev libjson-c-dev rapidjson-dev libgpiod2 libgpiod-dev libdrm-dev libevent-dev kcapi-tools libkcapi-dev libminizip-dev libhidapi-libusb0 can-utils dnsmasq linuxptp libpcap-dev"
 
 get_package_list()
 {
@@ -43,7 +43,7 @@ get_package_list()
 # The default version is Ubuntu Desktop
 ADD_PACKAGE_LIST="$(get_package_list "base") $(get_package_list "server") $(get_package_list "desktop") "
 ubuntufs_src="${LOCAL_DIR}/desktop"
-samplefs_version="v3.0.4"
+samplefs_version="v3.0.5"
 tar_file=${ubuntufs_src}/samplefs_desktop_${RELEASE}-${samplefs_version}.tar.gz
 
 
