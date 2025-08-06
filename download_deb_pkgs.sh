@@ -39,7 +39,7 @@ download_file()
 
     # Download the deb package
     echo "Downloading ${pkg_file} ..."
-    if ! curl -fs -O --connect-timeout 5 "${pkg_url}"; then
+    if ! curl -fs -O --connect-timeout 5 --speed-limit 1024 --speed-time 5 --retry 3 "${pkg_url}"; then
         echo "Error: Unable to download ${pkg_file}" >&2
         rm -f "${pkg_file}"
         return 1
@@ -157,7 +157,17 @@ download_deb_pkgs()
         # Check if the package has already been downloaded
         if [[ -f "$PKG_FILE" ]]; then
             echo "$PKG_FILE already exists. Skipping download."
-            continue
+            # Calculate the md5sum of the downloaded file
+            DOWNLOADED_MD5SUM=$(md5sum "${PKG_FILE}" | awk '{print $1}')
+
+            # Verify the md5sum value of the downloaded file
+            if [[ "${MD5SUM}" == "${DOWNLOADED_MD5SUM}" ]]; then
+                echo "File ${PKG_FILE} verify successfully"
+                continue
+            else
+                echo "File ${PKG_FILE} verify md5sum failed, Expected to be ${MD5SUM}, actually ${DOWNLOADED_MD5SUM}"
+                rm "${PKG_FILE}"
+            fi
         fi
 
         download_file "${PKG_FILE}" "${PKG_URL}" "${MD5SUM}"
