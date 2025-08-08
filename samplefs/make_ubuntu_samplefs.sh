@@ -400,6 +400,7 @@ make_base_root() {
 	chroot "${dst_dir}" /bin/bash -c "pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple"
 	chroot "${dst_dir}" /bin/bash -c "pip3 config set install.trusted-host https://pypi.tuna.tsinghua.edu.cn"
 	chroot "${dst_dir}" /bin/bash -c "pip3 install ${PYTHON_PACKAGE_LIST}"
+	chroot "${dst_dir}" /bin/bash -c "pip3 install --upgrade packaging"
 	py_pkg_list="${PYTHON_PACKAGE_LIST}"
 	if [ -n "${py_pkg_list}" ]; then
 		for package in ${py_pkg_list}
