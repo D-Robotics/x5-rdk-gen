@@ -461,11 +461,8 @@ function make_debian_deb() {
            exit 1
         }
 
-        mkdir -p "${deb_dst_dir}"/app/
-        cp -ar "${debian_src_dir}"/"${pkg_name}"/tuning_tool "${deb_dst_dir}"/app/
-
-        mkdir -p "${deb_dst_dir}"/usr/bin/
         cp "${debian_src_dir}"/"${pkg_name}"/debian/usr/hobot/lib/* "${deb_dst_dir}"/usr/hobot/lib/ -a
+        cp -ar "${debian_src_dir}"/"${pkg_name}"/drivers/isp_json/* "${deb_dst_dir}"/usr/hobot/lib/sensor/ -a
         is_allowed=1
         ;;
     hobot-dnn)
