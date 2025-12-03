@@ -222,6 +222,8 @@ function make_ubuntu_image()
     install_packages "${ROOTFS_BUILD_DIR}"
     rm "${ROOTFS_BUILD_DIR}"/app/hobot_debs/ -rf
 
+    chmod -R 775 "${ROOTFS_BUILD_DIR}/app"
+
     unmount_image "${IMG_FILE}"
     rm -f "${IMG_FILE}"
 
