@@ -115,7 +115,7 @@ function install_packages()
     echo "Start install hobot packages"
 
     cd "${dst_dir}/app/hobot_debs"
-    deb_list=$(ls | grep "^xserver" && ls | grep -v "^xserver")
+    deb_list=$(ls | grep "^xserver" || ls | grep -v "^xserver")
 
     for deb_name in ${deb_list[@]}
     do
@@ -221,7 +221,9 @@ function make_ubuntu_image()
 
     install_packages "${ROOTFS_BUILD_DIR}"
     rm "${ROOTFS_BUILD_DIR}"/app/hobot_debs/ -rf
-
+    if [[ $RDK_SOC_NAME == "x3" ]]; then
+        rm -rf ${ROOTFS_BUILD_DIR}/usr/lib/aarch64-linux-gnu/dri/*
+    fi
     chmod -R 775 "${ROOTFS_BUILD_DIR}/app"
 
     unmount_image "${IMG_FILE}"

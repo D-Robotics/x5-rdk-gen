@@ -9,6 +9,8 @@
 
 set -e
 
+source "$(dirname "$0")/.rdk_config"
+
 export CROSS_COMPILE=/opt/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-
 export LD_LIBRARY_PATH=/opt/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/lib64:$LD_LIBRARY_PATH
 export ARCH=arm64
@@ -26,10 +28,22 @@ KERNEL_BUILD_DIR=${IMAGE_DEPLOY_DIR}/kernel
 [ $(cat /proc/cpuinfo |grep 'processor'|wc -l) -gt 2 ] \
     && N="$((($(cat /proc/cpuinfo |grep 'processor'|wc -l)) - 2))" || N=1
 
-# 默认使用emmc配置，对于nor、nand需要使用另外的配置文件
-kernel_config_file=hobot_x5_rdk_ubuntu_defconfig
-
-KERNEL_SRC_DIR=${HR_TOP_DIR}/source/kernel
+case "$RDK_SOC_NAME" in
+    x3)
+        kernel_config_file=xj3_perf_ubuntu_defconfig
+        kernel_version=4.14.87
+	    KERNEL_SRC_DIR=${HR_TOP_DIR}/source/x3-kernel
+        ;;
+    x5)
+        kernel_config_file=hobot_x5_rdk_ubuntu_defconfig
+        kernel_version=6.1.83
+        KERNEL_SRC_DIR=${HR_TOP_DIR}/source/kernel
+        ;;
+    *)
+        echo "Unknown RDK_SOC_NAME: $RDK_SOC_NAME"
+        exit 1
+        ;;
+esac
 
 kernel_version=$(awk "/^VERSION =/{print \$3}" "${KERNEL_SRC_DIR}"/Makefile)
 kernel_patch_lvl=$(awk "/^PATCHLEVEL =/{print \$3}" "${KERNEL_SRC_DIR}"/Makefile)
@@ -38,7 +52,7 @@ export KERNEL_VER="${kernel_version}.${kernel_patch_lvl}.${kernel_sublevel}"
 
 function make_kernel_headers() {
     SRCDIR=${KERNEL_SRC_DIR}
-    HDRDIR="${KERNEL_BUILD_DIR}"/kernel_headers/usr/src/linux-headers-6.1.83
+    HDRDIR="${KERNEL_BUILD_DIR}"/kernel_headers/usr/src/linux-headers-"${kernel_version}"
     mkdir -p "${HDRDIR}"
 
     cd "${SRCDIR}"
@@ -90,12 +104,19 @@ function make_kernel_headers() {
     done
 
     cd "${SRCDIR}"
-    find scripts -iname "*.c" -print0 | while IFS= read -r -d '' file; do
-        cp --parents -Rf "$file" "${HDRDIR}"
-    done
-    make M="${HDRDIR}"/scripts clean
-    cp -Rf ${SRCDIR}/scripts/module.lds ${HDRDIR}/scripts
-    cp -Rf ${SRCDIR}/scripts/module.lds.S ${HDRDIR}/scripts
+	if [[ "$RDK_SOC_NAME" == "x5" ]]; then
+        find scripts -iname "*.c" -print0 | while IFS= read -r -d '' file; do
+	        cp --parents -Rf "$file" "${HDRDIR}"
+	    done
+	    make M="${HDRDIR}"/scripts clean
+	    cp -Rf ${SRCDIR}/scripts/module.lds ${HDRDIR}/scripts
+	    cp -Rf ${SRCDIR}/scripts/module.lds.S ${HDRDIR}/scripts
+	else
+		find . -iname "*.c" -print0 | while IFS= read -r -d '' file; do
+	        cp --parents -Rf "$file" "${HDRDIR}"
+	    done
+	    make M="${HDRDIR}"/scripts clean
+	fi
 
     cd "${HR_LOCAL_DIR}"
     rm -rf "${HDRDIR}"/arch/arm64/mach*
@@ -130,8 +151,13 @@ function build_all()
         exit 1
     }
 
-    # 编译生成 zImage
+    # 编译内核生成 Image dtbs
     make -j${N} || {
+        echo "make failed"
+        exit 1
+    }
+	
+    make Image dtbs -j${N} || {
         echo "make failed"
         exit 1
     }
@@ -151,20 +177,22 @@ function build_all()
         echo "make modules_install to INSTALL_MOD_PATH for release ko failed"
         exit 1
     }
+	
+    if [[ "$RDK_SOC_NAME" == "x5" ]]; then
+		# 编译、安装外部内核模块
+	    build_pre_modules "all" || {
+	        echo "build_pre_modules failed"
+	        exit 1
+	    }
 
-    # 编译、安装外部内核模块
-    build_pre_modules "all" || {
-        echo "build_pre_modules failed"
-        exit 1
-    }
-
-    # 执行DEPMOD生成内核模块依赖关系
-    make -j"${N}" modules_depmod \
-        INSTALL_MOD_PATH="${KO_INSTALL_DIR}" || {
-        echo "[ERROR]: make modules_depmod for ${KO_INSTALL_DIR} kernel modules failed"
-        exit 1
-    }
-
+	    # 执行DEPMOD生成内核模块依赖关系
+	    make -j"${N}" modules_depmod \
+	        INSTALL_MOD_PATH="${KO_INSTALL_DIR}" || {
+	        echo "[ERROR]: make modules_depmod for ${KO_INSTALL_DIR} kernel modules failed"
+	        exit 1
+	    }
+	fi
+	
     # strip 内核模块, 去掉debug info
     # ${CROSS_COMPILE}strip -g ${KO_INSTALL_DIR}/lib/modules/${KERNEL_VER}/*.ko
     find "${KO_INSTALL_DIR}"/lib/modules/"${KERNEL_VER}"/ -name "*.ko" -exec ${CROSS_COMPILE}strip -g '{}' \;
@@ -203,7 +231,7 @@ function kernel_menuconfig() {
 	if [ $? -eq 0 ]; then
 		# Run savedefconfig to save the configuration back to the original file
 		make ${BUILD_OPTIONS} -C "${KERNEL_SRC_DIR}" savedefconfig
-		dest_defconf_path="${HR_TOP_DIR}/source/kernel/arch/arm64/configs/${KERNEL_DEFCONFIG}"
+		dest_defconf_path="${KERNEL_SRC_DIR}/arch/arm64/configs/${KERNEL_DEFCONFIG}"
 		echo "**** Saving Kernel defconfig to ${dest_defconf_path} ****"
 		cp -f "${KERNEL_SRC_DIR}/defconfig" "${dest_defconf_path}"
 	fi

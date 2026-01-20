@@ -3,6 +3,8 @@
 # set -x
 set -euo pipefail
 
+source "$(dirname "$0")/.rdk_config"
+
 export HR_LOCAL_DIR=$(realpath $(cd $(dirname $0); pwd))
 
 # 编译出来的镜像保存位置
@@ -165,7 +167,18 @@ function make_debian_deb() {
         cp -arf "${IMAGE_DEPLOY_DIR}"/kernel/Image-rt  "${boot_dest_dir}"/ || true
         cp -arf "${KERNEL_DEPLOY_DIR}"/modules/* "${deb_dst_dir}"/
         cp -arf "${debian_src_dir}"/"${pkg_name}"/debian/boot/boot.scr "${deb_dst_dir}"/boot/
-
+        case "$RDK_SOC_NAME" in
+            x3)
+                rm -f "${deb_dst_dir}/lib/modprobe.d/blacklist-x5.conf"
+                ;;
+            x5)
+                rm -f "${deb_dst_dir}/lib/modprobe.d/blacklist-x3.conf"
+                ;;
+            *)
+                echo "Unknown RDK_SOC_NAME: $RDK_SOC_NAME"
+                exit 1
+                ;;
+        esac
         is_allowed=1
         ;;
     hobot-kernel-headers)
@@ -175,8 +188,8 @@ function make_debian_deb() {
             exit 1
         fi
 
-        pkg_description="Linux kernel headers for 6.1.83 on arm64
- This package provides kernel header files for 6.1.83 on arm64.
+        pkg_description="Linux kernel headers on arm64
+ This package provides kernel header files on arm64.
  This is useful for people who need to build external modules.
  Generally used for building out-of-tree kernel modules."
 
@@ -279,7 +292,9 @@ function make_debian_deb() {
         # set Commit
         sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
-        cd "${debian_src_dir}"/"${pkg_name}"/src
+        cp -arf "${debian_src_dir}"/"${pkg_name}"/"$RDK_SOC_NAME"/static/* "${deb_dst_dir}"/
+
+        cd "${debian_src_dir}"/"${pkg_name}"/"$RDK_SOC_NAME"/build
 
         make clean || {
            echo "make clean failed"
@@ -296,7 +311,24 @@ function make_debian_deb() {
             exit 1
         }
 
-        cp -arf "${debian_src_dir}"/"${pkg_name}"/debian/usr/bin/* "${deb_dst_dir}"/usr/bin/
+        cp -arf "${debian_src_dir}"/"${pkg_name}"/"$RDK_SOC_NAME"/debian/usr/bin/* "${deb_dst_dir}"/usr/bin/
+
+        for template_file in "${deb_dst_dir}"/DEBIAN/*; do
+            if [ -f "$template_file" ]; then
+                case "$RDK_SOC_NAME" in
+                    x3)
+                        sed -i '/=== X5_START ===/,/=== X5_END ===/d' "$template_file"
+                        ;;
+                    x5)
+                        sed -i '/=== X3_START ===/,/=== X3_END ===/d' "$template_file"
+                        ;;
+                    *)
+                        echo "Unknown RDK_SOC_NAME: $RDK_SOC_NAME"
+                        exit 1
+                        ;;
+                esac
+            fi
+        done
 
         is_allowed=1
         ;;
@@ -472,6 +504,20 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-boot/' "${deb_dst_dir}"/DEBIAN/control
+
+        case "$RDK_SOC_NAME" in
+            x3)
+                cp -ar ${debian_src_dir}/${pkg_name}/x3/usr "$deb_dst_dir/"
+                ;;
+            x5)
+                cp -ar ${debian_src_dir}/${pkg_name}/x5/usr "$deb_dst_dir/"
+                ;;
+            *)
+                echo "Unknown RDK_SOC_NAME: $RDK_SOC_NAME"
+                exit 1
+                ;;
+        esac
+
         # set Commit
         sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
@@ -624,7 +670,6 @@ function help_msg
         echo "    ${pkg_name}"
     done
 }
-
 
 if [ $# -eq 0 ];then
     # clear all
