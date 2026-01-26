@@ -279,6 +279,36 @@ function make_debian_deb() {
         }
 
         cp -arf "${debian_src_dir}"/"${pkg_name}"/debian/usr/bin/suspend-button "${deb_dst_dir}"/usr/bin/
+
+        case "$RDK_SOC_NAME" in
+            x3)
+                sed -i '/=== X5_START ===/,/=== X5_END ===/d' "${deb_dst_dir}"/etc/apt/sources.list.d/sunrise.list
+                ;;
+            x5)
+                sed -i '/=== X3_START ===/,/=== X3_END ===/d' "${deb_dst_dir}"/etc/apt/sources.list.d/sunrise.list
+                ;;
+            *)
+                echo "Unknown RDK_SOC_NAME: $RDK_SOC_NAME"
+                exit 1
+                ;;
+        esac
+
+        for template_file in "${deb_dst_dir}"/DEBIAN/*; do
+            if [ -f "$template_file" ]; then
+                case "$RDK_SOC_NAME" in
+                    x3)
+                        sed -i '/=== X5_START ===/,/=== X5_END ===/d' "$template_file"
+                        ;;
+                    x5)
+                        sed -i '/=== X3_START ===/,/=== X3_END ===/d' "$template_file"
+                        ;;
+                    *)
+                        echo "Unknown RDK_SOC_NAME: $RDK_SOC_NAME"
+                        exit 1
+                        ;;
+                esac
+            fi
+        done
         
         is_allowed=1
         ;;
@@ -394,22 +424,6 @@ function make_debian_deb() {
             echo "make failed"
             exit 1
         }
-        cd ${debian_src_dir}/${pkg_name}/hb_gpioinfo
-
-        make clean || {
-           echo "make clean failed"
-           exit 1
-        }
-
-        make || {
-           echo "make failed"
-           exit 1
-        }
-
-        make install || {
-            echo "make failed"
-            exit 1
-        }
 
         if [ -f "${hb_dtb_tool_dir}"/hb_dtb_tool ];then
             echo "cp -a ${hb_dtb_tool_dir}/hb_dtb_tool ${deb_dst_dir}/usr/bin"
@@ -418,7 +432,6 @@ function make_debian_deb() {
 
         echo "cp -af ${hb_dtb_tool_dir}/*pi-config ${deb_dst_dir}/usr/bin"
         cp -af "${hb_dtb_tool_dir}"/*pi-config "${deb_dst_dir}"/usr/bin
-        cp -arf "${debian_src_dir}"/"${pkg_name}"/debian/usr/bin/hb_gpioinfo "${deb_dst_dir}"/usr/bin
 
         if [ -d "${debian_src_dir}"/"${pkg_name}"/hb_gpio_py/hobot-gpio ];then
             echo "cp -arf ${debian_src_dir}/${pkg_name}/hb_gpio_py/hobot-gpio ${deb_dst_dir}/usr/lib/"
@@ -609,6 +622,27 @@ function make_debian_deb() {
         mkdir -p "${deb_dst_dir}"/boot/overlays
         cp -arf "${debian_src_dir}"/"${pkg_name}"/debian/boot/overlays/*.dtbo "${deb_dst_dir}"/boot/overlays
         rm "${deb_dst_dir}"/boot/overlays/Makefile
+
+        case "$RDK_SOC_NAME" in
+            x3)
+                cp -arf "${deb_dst_dir}"/etc/hobot_audio_config/x3/* "${deb_dst_dir}"/etc/hobot_audio_config/
+                cp -arf "${deb_dst_dir}"/lib/modprobe.d/x3/* "${deb_dst_dir}"/lib/modprobe.d/
+                ;;
+            x5)
+                cp -arf "${deb_dst_dir}"/etc/hobot_audio_config/x5/* "${deb_dst_dir}"/etc/hobot_audio_config/
+                cp -arf "${deb_dst_dir}"/lib/modprobe.d/x5/* "${deb_dst_dir}"/lib/modprobe.d/
+                ;;
+            *)
+                echo "Unknown RDK_SOC_NAME: $RDK_SOC_NAME"
+                exit 1
+                ;;
+        esac
+
+        rm -rf "${deb_dst_dir}"/etc/hobot_audio_config/x3
+        rm -rf "${deb_dst_dir}"/etc/hobot_audio_config/x5
+        rm -rf "${deb_dst_dir}"/lib/modprobe.d/x3
+        rm -rf "${deb_dst_dir}"/lib/modprobe.d/x5
+
         is_allowed=1
     ;;
     hobot-miniboot)
