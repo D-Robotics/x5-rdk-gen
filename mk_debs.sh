@@ -425,6 +425,30 @@ function make_debian_deb() {
             exit 1
         }
 
+        case "$RDK_SOC_NAME" in
+            x5)
+                cd ${debian_src_dir}/${pkg_name}/hb_gpioinfo
+
+                make clean || {
+                    echo "make clean failed"
+                    exit 1
+                }
+
+                make || {
+                    echo "make failed"
+                    exit 1
+                }
+
+                make install || {
+                    echo "make failed"
+                    exit 1
+                }
+                cp -arf "${debian_src_dir}"/"${pkg_name}"/debian/usr/bin/hb_gpioinfo "${deb_dst_dir}"/usr/bin
+                ;;
+            *)
+                ;;
+        esac
+
         if [ -f "${hb_dtb_tool_dir}"/hb_dtb_tool ];then
             echo "cp -a ${hb_dtb_tool_dir}/hb_dtb_tool ${deb_dst_dir}/usr/bin"
             cp -af "${hb_dtb_tool_dir}"/hb_dtb_tool "${deb_dst_dir}"/usr/bin
