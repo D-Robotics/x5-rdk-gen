@@ -39,7 +39,7 @@ download_file()
 
     # Download the deb package
     echo "Downloading ${pkg_file} ..."
-    if ! curl -fs -O --connect-timeout 5 --speed-limit 1024 --speed-time 5 --retry 3 "${pkg_url}"; then
+    if ! curl -fs -O --connect-timeout 20 --speed-limit 1024 --speed-time 5 --retry 3 "${pkg_url}"; then
         echo "Error: Unable to download ${pkg_file}" >&2
         rm -f "${pkg_file}"
         return 1
@@ -212,7 +212,7 @@ main()
     [ -n "${RDK_DEB_PKG_DIR}" ] && [ ! -d "${RDK_DEB_PKG_DIR}" ] && mkdir "${RDK_DEB_PKG_DIR}"
     cd "${RDK_DEB_PKG_DIR}"
 
-    if curl -sfO --connect-timeout 5 "${RDK_ARCHIVE_URL}${package_url}"; then
+    if curl -sfO --connect-timeout 20 "${RDK_ARCHIVE_URL}${package_url}"; then
         echo "Packages downloaded successfully"
     else
         echo "Packages downloaded failed"

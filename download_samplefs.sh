@@ -74,7 +74,7 @@ main()
         echo "VERSION_FILE: ""$VERSION_FILE"
 
         # Download the version information file
-        if curl -fs -O --connect-timeout 5 "${RDK_SAMPLEFS_URL}/${FILE_NAME}/${RDK_UBUNTU_VERSION}/${VERSION_FILE}"; then
+        if curl -fs -O --connect-timeout 20 "${RDK_SAMPLEFS_URL}/${FILE_NAME}/${RDK_UBUNTU_VERSION}/${VERSION_FILE}"; then
             echo "File ${VERSION_FILE} downloaded successfully"
         else
             echo "File ${VERSION_FILE} downloaded failed"
@@ -98,7 +98,7 @@ main()
     fi
 
     # Download the md5sum file for the file
-    if curl -fs -O --connect-timeout 5 "${RDK_SAMPLEFS_URL}/${FILE_NAME}/${RDK_UBUNTU_VERSION}/${MD5_FILE}"; then
+    if curl -fs -O --connect-timeout 20 "${RDK_SAMPLEFS_URL}/${FILE_NAME}/${RDK_UBUNTU_VERSION}/${MD5_FILE}"; then
         echo "File ${MD5_FILE} downloaded successfully"
     else
         echo "File ${MD5_FILE} downloaded failed"
@@ -110,7 +110,7 @@ main()
 
     # Download the file
     echo "Downloading ${FILE} ..."
-    if curl -f -O --connect-timeout 5 "${RDK_SAMPLEFS_URL}/${FILE_NAME}/${RDK_UBUNTU_VERSION}/${FILE}"; then
+    if curl -f -O --connect-timeout 20 "${RDK_SAMPLEFS_URL}/${FILE_NAME}/${RDK_UBUNTU_VERSION}/${FILE}"; then
         echo "File ${FILE} downloaded successfully"
     else
         echo "File ${FILE} downloaded failed"
