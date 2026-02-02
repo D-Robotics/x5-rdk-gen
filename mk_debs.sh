@@ -683,6 +683,144 @@ function make_debian_deb() {
 
         is_allowed=1
         ;;
+    x3-hobot-display)
+        pkg_description="Display Support Package"
+
+        gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
+
+        # set Depends
+        sed -i 's/Depends: .*$/Depends: /' ${deb_dst_dir}/DEBIAN/control
+
+        cd ${debian_src_dir}/${pkg_name}/hobot_display_services
+        make || {
+            echo "make failed"
+            exit 1
+        }
+
+        mkdir -p $deb_dst_dir/usr/bin
+        cp -a ${debian_src_dir}/${pkg_name}/hobot_display_services/display $deb_dst_dir/usr/bin/hobot_display_service
+        cp -a ${debian_src_dir}/${pkg_name}/hobot_display_services/get_edid_raw_data $deb_dst_dir/usr/bin
+        cp -a ${debian_src_dir}/${pkg_name}/hobot_display_services/get_hdmi_res $deb_dst_dir/usr/bin
+        cp -a ${debian_src_dir}/${pkg_name}/hobot_display_services/hobot_parse_std_timing $deb_dst_dir/usr/bin
+        mkdir -p $deb_dst_dir/usr/lib
+        cp -a ${debian_src_dir}/${pkg_name}/hobot_display_services/liblt8618.so $deb_dst_dir/usr/lib
+
+        is_allowed=1
+        ;;
+    x3-hobot-multimedia)
+        pkg_description="Multimedia Support Package"
+
+        gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
+
+        # set Depends
+        sed -i 's/Depends: .*$/Depends: hobot-boot/' ${deb_dst_dir}/DEBIAN/control
+
+        cp -ar ${debian_src_dir}/${pkg_name}/usr "$deb_dst_dir/"
+        cp -ar ${debian_src_dir}/${pkg_name}/etc "$deb_dst_dir/"
+
+        is_allowed=1
+        ;;
+    x3-hobot-multimedia-dev)
+        pkg_description="Multimedia Development Support Package"
+
+        gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
+
+        # set Depends
+        sed -i 's/Depends: .*$/Depends: hobot-multimedia,hobot-camera/' ${deb_dst_dir}/DEBIAN/control
+
+        cp -ar ${debian_src_dir}/${pkg_name}/usr "$deb_dst_dir/"
+
+        is_allowed=1
+        ;;
+    x3-hobot-multimedia-samples)
+        pkg_description="Example of Multimedia (Hapi)"
+
+        gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
+
+        # set Depends
+        sed -i 's/Depends: .*$/Depends: hobot-multimedia-dev,hobot-multimedia/' ${deb_dst_dir}/DEBIAN/control
+        
+        is_allowed=1
+        ;;
+    x3-hobot-camera)
+        pkg_description="Camera Sensor Support Package"
+
+        gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
+
+        # set Depends
+        sed -i 's/Depends: .*$/Depends: hobot-boot/' ${deb_dst_dir}/DEBIAN/control
+
+        cd ${debian_src_dir}/${pkg_name}/drivers
+        make || {
+            echo "make failed"
+            exit 1
+        }
+
+        mkdir -p $deb_dst_dir/usr/lib/sensorlib
+        cp -a ${debian_src_dir}/${pkg_name}/drivers/*.so $deb_dst_dir/usr/lib/sensorlib
+
+        find ${debian_src_dir}/${pkg_name}/camera_configs -name "*.so" -exec cp {} $deb_dst_dir/usr/lib/sensorlib/ \;
+
+        mkdir -p $deb_dst_dir/app/
+        cp -ar ${debian_src_dir}/${pkg_name}/camera_configs $deb_dst_dir/app/
+
+        mkdir -p "$deb_dst_dir/usr/bin/"
+        cp ${debian_src_dir}/${pkg_name}/camera_configs/common/initweb.sh "$deb_dst_dir/usr/bin/"
+        is_allowed=1
+        ;;
+    x3-hobot-spdev)
+        pkg_description="Python and C/C++ Development Interface"
+
+        gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
+
+        # set Depends
+        sed -i 's/Depends: .*$/Depends: hobot-multimedia,hobot-camera,hobot-dnn/' ${deb_dst_dir}/DEBIAN/control
+
+        cd ${debian_src_dir}/${pkg_name}
+
+        ./build.sh || {
+            echo "build.sh failed"
+            exit 1
+        }
+
+        mkdir -p $deb_dst_dir/usr/lib
+        cp -arf ${debian_src_dir}/${pkg_name}/output/*.so $deb_dst_dir/usr/lib/
+        mkdir -p $deb_dst_dir/usr/include
+        cp -arf ${debian_src_dir}/${pkg_name}/output/include/*.h  $deb_dst_dir/usr/include/
+        mkdir -p $deb_dst_dir/usr/lib/hobot_spdev/
+        cp -arf ${debian_src_dir}/${pkg_name}/output/*.whl  $deb_dst_dir/usr/lib/hobot_spdev/
+        is_allowed=1
+        ;;
+    x3-hobot-sp-samples)
+        pkg_description="Example of Python and C/C++ Development Interface"
+
+        gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
+
+        # set Depends
+        sed -i 's/Depends: .*$/Depends: hobot-spdev,hobot-models-basic/' ${deb_dst_dir}/DEBIAN/control
+
+        is_allowed=1
+        ;;
+    x3-hobot-miniboot)
+        pkg_description="RDK Miniboot updater"
+
+        gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
+
+        # set Depends
+        sed -i 's/Depends: .*$/Depends: /' ${deb_dst_dir}/DEBIAN/control
+
+        is_allowed=1
+        ;;
+    x3-hobot-bpu-drivers)
+        pkg_description="Horizon BPU Drivers"
+
+        gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
+
+        # set Depends
+        sed -i 's/Depends: .*$/Depends: hobot-boot/' ${deb_dst_dir}/DEBIAN/control
+
+        is_allowed=1
+        ;;
     *)
         echo "Error: Make package ${pkg_name}-${pkg_version} failed"
         is_allowed=0
@@ -700,7 +838,7 @@ function make_debian_deb() {
     fi
 }
 
-deb_pkg_list=(
+deb_pkg_list_x5=(
     "hobot-boot"
     "hobot-kernel-headers"
     "hobot-dtb"
@@ -720,6 +858,41 @@ deb_pkg_list=(
     "hobot-miniboot"
     "hobot-audio-config"
 )
+
+deb_pkg_list_x3=(
+    "hobot-boot"
+    "hobot-kernel-headers"
+    "hobot-dtb"
+    "x3-hobot-bpu-drivers"
+    "hobot-configs"
+    "hobot-utils"
+    "x3-hobot-display"
+    "hobot-wifi"
+    "hobot-io"
+    "hobot-io-samples"
+    "x3-hobot-multimedia"
+    "x3-hobot-multimedia-dev"
+    "x3-hobot-camera"
+    "hobot-dnn"
+    "x3-hobot-spdev"
+    "x3-hobot-sp-samples"
+    "x3-hobot-multimedia-samples"
+    "x3-hobot-miniboot"
+    "hobot-audio-config"
+)
+
+case "$RDK_SOC_NAME" in
+    x3)
+        deb_pkg_list=("${deb_pkg_list_x3[@]}")
+        ;;
+    x5)
+        deb_pkg_list=("${deb_pkg_list_x5[@]}")
+        ;;
+    *)
+        echo "Unknown RDK_SOC_NAME: $RDK_SOC_NAME"
+        exit 1
+        ;;
+esac
 
 function help_msg
 {
