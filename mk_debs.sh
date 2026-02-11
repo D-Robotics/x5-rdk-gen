@@ -120,13 +120,13 @@ function get_version() {
 
 
 function make_debian_deb() {
-    pkg_name=${1}
-    pkg_version=$(get_version "${debian_src_dir}"/"${pkg_name}")-${pkg_build_time}
-
+    src_name=${1}
+    pkg_name="${src_name//x3-/}"
+    pkg_version=$(get_version "${debian_src_dir}"/"${src_name}")-${pkg_build_time}
     #命名规范：hobot-包名_版本_架构
     deb_name=${pkg_name}_${pkg_version}_${ARCH}
     deb_dst_dir=${debian_dst_dir}/${deb_name}
-    deb_src_dir=${debian_src_dir}/${pkg_name}/debian
+    deb_src_dir=${debian_src_dir}/${src_name}/debian
     rm -rf "${debian_dst_dir}"/"${pkg_name}"_*
     echo deb_dst_dir = "${deb_dst_dir}"
     mkdir -p "${deb_dst_dir}"
@@ -135,7 +135,7 @@ function make_debian_deb() {
     echo "start ${FUNCNAME}: ${deb_dst_dir}/${deb_name}.deb"
 
     is_allowed=0
-    case ${pkg_name} in
+    case ${src_name} in
     hobot-boot)
         KERNEL_DEPLOY_DIR=${IMAGE_DEPLOY_DIR}/kernel
         if [ ! -d "${KERNEL_DEPLOY_DIR}" ]; then
@@ -152,6 +152,18 @@ function make_debian_deb() {
         # set Commit
         sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
         sed -i "s/^Description:.*/&\\n Kernel Commit: $(git -C "${debian_src_dir}/kernel" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
+        case "$RDK_SOC_NAME" in
+            x3)
+                sed -i "s/^Description:.*/&\\n Kernel Commit: $(git -C "${debian_src_dir}/x3-kernel" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
+                ;;
+            x5)
+                sed -i "s/^Description:.*/&\\n Kernel Commit: $(git -C "${debian_src_dir}/kernel" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
+                ;;
+            *)
+                echo "Unknown RDK_SOC_NAME: $RDK_SOC_NAME"
+                exit 1
+                ;;
+        esac
 
         cd "${debian_src_dir}"/"${pkg_name}"/debian/boot
         rm -f boot.scr
@@ -690,20 +702,28 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: /' ${deb_dst_dir}/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
-        cd ${debian_src_dir}/${pkg_name}/hobot_display_services
+        cd ${debian_src_dir}/${src_name}/hobot_display_services
+
+        make clean || {
+           echo "make clean failed"
+           exit 1
+        }
+
         make || {
             echo "make failed"
             exit 1
         }
 
         mkdir -p $deb_dst_dir/usr/bin
-        cp -a ${debian_src_dir}/${pkg_name}/hobot_display_services/display $deb_dst_dir/usr/bin/hobot_display_service
-        cp -a ${debian_src_dir}/${pkg_name}/hobot_display_services/get_edid_raw_data $deb_dst_dir/usr/bin
-        cp -a ${debian_src_dir}/${pkg_name}/hobot_display_services/get_hdmi_res $deb_dst_dir/usr/bin
-        cp -a ${debian_src_dir}/${pkg_name}/hobot_display_services/hobot_parse_std_timing $deb_dst_dir/usr/bin
+        cp -a ${debian_src_dir}/${src_name}/hobot_display_services/display $deb_dst_dir/usr/bin/hobot_display_service
+        cp -a ${debian_src_dir}/${src_name}/hobot_display_services/get_edid_raw_data $deb_dst_dir/usr/bin
+        cp -a ${debian_src_dir}/${src_name}/hobot_display_services/get_hdmi_res $deb_dst_dir/usr/bin
+        cp -a ${debian_src_dir}/${src_name}/hobot_display_services/hobot_parse_std_timing $deb_dst_dir/usr/bin
         mkdir -p $deb_dst_dir/usr/lib
-        cp -a ${debian_src_dir}/${pkg_name}/hobot_display_services/liblt8618.so $deb_dst_dir/usr/lib
+        cp -a ${debian_src_dir}/${src_name}/hobot_display_services/liblt8618.so $deb_dst_dir/usr/lib
 
         is_allowed=1
         ;;
@@ -714,9 +734,11 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-boot/' ${deb_dst_dir}/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
-        cp -ar ${debian_src_dir}/${pkg_name}/usr "$deb_dst_dir/"
-        cp -ar ${debian_src_dir}/${pkg_name}/etc "$deb_dst_dir/"
+        cp -ar ${debian_src_dir}/${src_name}/usr "$deb_dst_dir/"
+        cp -ar ${debian_src_dir}/${src_name}/etc "$deb_dst_dir/"
 
         is_allowed=1
         ;;
@@ -726,7 +748,9 @@ function make_debian_deb() {
         gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
 
         # set Depends
-        sed -i 's/Depends: .*$/Depends: hobot-multimedia,hobot-camera/' ${deb_dst_dir}/DEBIAN/control
+        sed -i 's/Depends: .*$/Depends: x3-hobot-multimedia,x3-hobot-camera/' ${deb_dst_dir}/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
         cp -ar ${debian_src_dir}/${pkg_name}/usr "$deb_dst_dir/"
 
@@ -738,7 +762,9 @@ function make_debian_deb() {
         gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
 
         # set Depends
-        sed -i 's/Depends: .*$/Depends: hobot-multimedia-dev,hobot-multimedia/' ${deb_dst_dir}/DEBIAN/control
+        sed -i 's/Depends: .*$/Depends: x3-hobot-multimedia-dev,x3-hobot-multimedia/' ${deb_dst_dir}/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
         
         is_allowed=1
         ;;
@@ -749,23 +775,32 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-boot/' ${deb_dst_dir}/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
-        cd ${debian_src_dir}/${pkg_name}/drivers
+        cd ${debian_src_dir}/${src_name}/drivers
+
+        make clean || {
+           echo "make clean failed"
+           exit 1
+        }
+
         make || {
             echo "make failed"
             exit 1
         }
 
         mkdir -p $deb_dst_dir/usr/lib/sensorlib
-        cp -a ${debian_src_dir}/${pkg_name}/drivers/*.so $deb_dst_dir/usr/lib/sensorlib
+        cp -a ${debian_src_dir}/${src_name}/drivers/*.so $deb_dst_dir/usr/lib/sensorlib
 
-        find ${debian_src_dir}/${pkg_name}/camera_configs -name "*.so" -exec cp {} $deb_dst_dir/usr/lib/sensorlib/ \;
+        find ${debian_src_dir}/${src_name}/camera_configs -name "*.so" -exec cp {} $deb_dst_dir/usr/lib/sensorlib/ \;
 
         mkdir -p $deb_dst_dir/app/
-        cp -ar ${debian_src_dir}/${pkg_name}/camera_configs $deb_dst_dir/app/
+        cp -ar ${debian_src_dir}/${src_name}/camera_configs $deb_dst_dir/app/
 
         mkdir -p "$deb_dst_dir/usr/bin/"
-        cp ${debian_src_dir}/${pkg_name}/camera_configs/common/initweb.sh "$deb_dst_dir/usr/bin/"
+        cp ${debian_src_dir}/${src_name}/camera_configs/common/initweb.sh "$deb_dst_dir/usr/bin/"
+
         is_allowed=1
         ;;
     x3-hobot-spdev)
@@ -774,9 +809,16 @@ function make_debian_deb() {
         gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
 
         # set Depends
-        sed -i 's/Depends: .*$/Depends: hobot-multimedia,hobot-camera,hobot-dnn/' ${deb_dst_dir}/DEBIAN/control
+        sed -i 's/Depends: .*$/Depends: x3-hobot-multimedia,x3-hobot-camera,hobot-dnn/' ${deb_dst_dir}/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
-        cd ${debian_src_dir}/${pkg_name}
+        cd ${debian_src_dir}/${src_name}
+
+        ./build.sh clean || {
+            echo "build.sh clean failed"
+            exit 1
+        }
 
         ./build.sh || {
             echo "build.sh failed"
@@ -784,11 +826,11 @@ function make_debian_deb() {
         }
 
         mkdir -p $deb_dst_dir/usr/lib
-        cp -arf ${debian_src_dir}/${pkg_name}/output/*.so $deb_dst_dir/usr/lib/
+        cp -arf ${debian_src_dir}/${src_name}/output/*.so $deb_dst_dir/usr/lib/
         mkdir -p $deb_dst_dir/usr/include
-        cp -arf ${debian_src_dir}/${pkg_name}/output/include/*.h  $deb_dst_dir/usr/include/
+        cp -arf ${debian_src_dir}/${src_name}/output/include/*.h  $deb_dst_dir/usr/include/
         mkdir -p $deb_dst_dir/usr/lib/hobot_spdev/
-        cp -arf ${debian_src_dir}/${pkg_name}/output/*.whl  $deb_dst_dir/usr/lib/hobot_spdev/
+        cp -arf ${debian_src_dir}/${src_name}/output/*.whl  $deb_dst_dir/usr/lib/hobot_spdev/
         is_allowed=1
         ;;
     x3-hobot-sp-samples)
@@ -797,7 +839,9 @@ function make_debian_deb() {
         gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
 
         # set Depends
-        sed -i 's/Depends: .*$/Depends: hobot-spdev,hobot-models-basic/' ${deb_dst_dir}/DEBIAN/control
+        sed -i 's/Depends: .*$/Depends: x3-hobot-spdev,hobot-models-basic/' ${deb_dst_dir}/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
         is_allowed=1
         ;;
@@ -808,6 +852,8 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: /' ${deb_dst_dir}/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
         is_allowed=1
         ;;
@@ -818,6 +864,8 @@ function make_debian_deb() {
 
         # set Depends
         sed -i 's/Depends: .*$/Depends: hobot-boot/' ${deb_dst_dir}/DEBIAN/control
+        # set Commit
+        sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
         is_allowed=1
         ;;

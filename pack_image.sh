@@ -116,7 +116,9 @@ function install_packages()
 
     cd "${dst_dir}/app/hobot_debs"
     deb_list=$(
-        printf "%s\n" xserver*.deb
+        if ls xserver*.deb >/dev/null 2>&1; then
+            printf "%s\n" xserver*.deb
+        fi
         printf "%s\n" *.deb | grep -v '^xserver'
     )
 
