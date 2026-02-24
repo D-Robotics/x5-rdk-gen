@@ -748,7 +748,7 @@ function make_debian_deb() {
         gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
 
         # set Depends
-        sed -i 's/Depends: .*$/Depends: x3-hobot-multimedia,x3-hobot-camera/' ${deb_dst_dir}/DEBIAN/control
+        sed -i 's/Depends: .*$/Depends: hobot-multimedia,hobot-camera/' ${deb_dst_dir}/DEBIAN/control
         # set Commit
         sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
@@ -762,7 +762,7 @@ function make_debian_deb() {
         gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
 
         # set Depends
-        sed -i 's/Depends: .*$/Depends: x3-hobot-multimedia-dev,x3-hobot-multimedia/' ${deb_dst_dir}/DEBIAN/control
+        sed -i 's/Depends: .*$/Depends: hobot-multimedia-dev,hobot-multimedia/' ${deb_dst_dir}/DEBIAN/control
         # set Commit
         sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
         
@@ -809,7 +809,7 @@ function make_debian_deb() {
         gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
 
         # set Depends
-        sed -i 's/Depends: .*$/Depends: x3-hobot-multimedia,x3-hobot-camera,hobot-dnn/' ${deb_dst_dir}/DEBIAN/control
+        sed -i 's/Depends: .*$/Depends: hobot-multimedia,hobot-camera,hobot-dnn/' ${deb_dst_dir}/DEBIAN/control
         # set Commit
         sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
@@ -839,7 +839,7 @@ function make_debian_deb() {
         gen_contrl_file "${deb_dst_dir}/DEBIAN" "${pkg_name}" "${pkg_version}" "${pkg_description}"
 
         # set Depends
-        sed -i 's/Depends: .*$/Depends: x3-hobot-spdev,hobot-models-basic/' ${deb_dst_dir}/DEBIAN/control
+        sed -i 's/Depends: .*$/Depends: hobot-spdev,hobot-models-basic/' ${deb_dst_dir}/DEBIAN/control
         # set Commit
         sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
