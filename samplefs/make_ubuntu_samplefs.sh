@@ -27,7 +27,7 @@ apt_extra="-o Acquire::http::Proxy=\"http://localhost:3142\""
 PYTHON_PACKAGE_LIST="numpy==1.26.4 opencv-python pySerial i2cdev spidev matplotlib pillow \
 websocket websockets lark-parser netifaces google protobuf==3.20.1 "
 
-DEBOOTSTRAP_LIST="systemd sudo locales apt-utils init dbus kmod udev bash-completion ntp libjsoncpp-dev libjson-c-dev rapidjson-dev libgpiod2 libgpiod-dev libdrm-dev libevent-dev kcapi-tools libkcapi-dev libminizip-dev libhidapi-libusb0 can-utils dnsmasq linuxptp libpcap-dev"
+DEBOOTSTRAP_LIST="systemd sudo locales apt-utils init dbus kmod udev bash-completion ntp libjsoncpp-dev libjson-c-dev rapidjson-dev libgpiod2 libgpiod-dev libdrm-dev libevent-dev kcapi-tools libkcapi-dev libminizip-dev libhidapi-libusb0 can-utils dnsmasq linuxptp libpcap-dev dialog"
 
 get_package_list()
 {
@@ -43,7 +43,7 @@ get_package_list()
 # The default version is Ubuntu Desktop
 ADD_PACKAGE_LIST="$(get_package_list "base") $(get_package_list "server") $(get_package_list "desktop") "
 ubuntufs_src="${LOCAL_DIR}/desktop"
-samplefs_version="v3.0.5"
+samplefs_version="v3.0.6"
 tar_file=${ubuntufs_src}/samplefs_desktop_${RELEASE}-${samplefs_version}.tar.gz
 
 
@@ -355,7 +355,7 @@ make_base_root() {
 		# Add 11.2.1 and 11.3.1 soft links to itself
 		chroot "${dst_dir}" /bin/bash -c "ln -sf . /lib/aarch64-none-linux-gnu/11.2.1"
 		chroot "${dst_dir}" /bin/bash -c "ln -sf . /lib/aarch64-none-linux-gnu/11.3.1"
-		
+
 		# Ubuntu Desktop Add firefox from xtradeb/apps
 		if [[ $ubuntufs_src == "${LOCAL_DIR}/desktop"  ]] ; then
 			chroot "${dst_dir}" /bin/bash -c "apt remove firefox -y"
@@ -394,7 +394,7 @@ make_base_root() {
 		chroot "${dst_dir}" /bin/bash -c "apt install ros-humble-cv-bridge -y"
 		chroot "${dst_dir}" /bin/bash -c "apt install libpcl-dev libgles2-mesa-dev ocl-icd-libopencl1 opencl-headers -y"
 	fi
-	
+
 	chroot "${dst_dir}" /bin/bash -c "dpkg --get-selections" | grep -v deinstall | awk '{print $1}' | cut -f1 -d':' | sort > "${tar_file}".info
 
 	chroot "${dst_dir}" /bin/bash -c "pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple"
