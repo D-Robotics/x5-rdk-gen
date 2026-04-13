@@ -722,6 +722,8 @@ function make_debian_deb() {
         cp -a ${debian_src_dir}/${src_name}/hobot_display_services/get_edid_raw_data $deb_dst_dir/usr/bin
         cp -a ${debian_src_dir}/${src_name}/hobot_display_services/get_hdmi_res $deb_dst_dir/usr/bin
         cp -a ${debian_src_dir}/${src_name}/hobot_display_services/hobot_parse_std_timing $deb_dst_dir/usr/bin
+        cp -a ${debian_src_dir}/${src_name}/hobot_display_services/get_hdmi_connect $deb_dst_dir/usr/bin
+		cp -a ${debian_src_dir}/${src_name}/hobot_display_services/flash_hdmi_edid $deb_dst_dir/usr/bin
         mkdir -p $deb_dst_dir/usr/lib
         cp -a ${debian_src_dir}/${src_name}/hobot_display_services/liblt8618.so $deb_dst_dir/usr/lib
 
@@ -752,7 +754,7 @@ function make_debian_deb() {
         # set Commit
         sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
-        cp -ar ${debian_src_dir}/${pkg_name}/usr "$deb_dst_dir/"
+        cp -ar ${debian_src_dir}/${src_name}/usr "$deb_dst_dir/"
 
         is_allowed=1
         ;;
