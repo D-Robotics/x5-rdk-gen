@@ -25,7 +25,7 @@ apt_mirror="http://localhost:3142/${UBUNTU_MIRROR}"
 apt_extra="-o Acquire::http::Proxy=\"http://localhost:3142\""
 
 PYTHON_PACKAGE_LIST="numpy==1.26.4 opencv-python pySerial i2cdev spidev matplotlib pillow \
-websocket websockets lark-parser netifaces google protobuf==3.20.1 "
+websocket websockets lark-parser netifaces google protobuf==3.20.1 gevent==25.5.1"
 
 DEBOOTSTRAP_LIST="systemd sudo locales apt-utils init dbus kmod udev bash-completion ntp libjsoncpp-dev libjson-c-dev rapidjson-dev libgpiod2 libgpiod-dev libdrm-dev libevent-dev kcapi-tools libkcapi-dev libminizip-dev libhidapi-libusb0 can-utils dnsmasq linuxptp libpcap-dev"
 
