@@ -220,6 +220,7 @@ function build_all()
 
     # 拷贝 内核 Image
     cp -f "arch/arm64/boot/Image" "${KERNEL_BUILD_DIR}"/Image-rt
+    cp -f "arch/arm64/boot/Image.lz4" "${KERNEL_BUILD_DIR}"/
 
     # 生成内核头文件
     make_kernel_headers
