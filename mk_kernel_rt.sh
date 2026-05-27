@@ -219,7 +219,7 @@ function build_all()
     rm -rf "${KO_INSTALL_DIR}"/lib/modules/"${KERNEL_VER}"/{build,source}
 
     # 拷贝 内核 Image
-    cp -f "arch/arm64/boot/Image" "${KERNEL_BUILD_DIR}"/Image-rt
+    cp -f "arch/arm64/boot/Image.lz4" "${KERNEL_BUILD_DIR}"/Image-rt.lz4
 
     # 生成内核头文件
     make_kernel_headers

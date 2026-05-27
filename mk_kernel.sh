@@ -200,7 +200,7 @@ function build_all()
     rm -rf "${KO_INSTALL_DIR}"/lib/modules/"${KERNEL_VER}"/{build,source}
 
     # 拷贝 内核 Image
-    cp -f "arch/arm64/boot/Image" "${KERNEL_BUILD_DIR}"/
+    cp -f "arch/arm64/boot/Image.lz4" "${KERNEL_BUILD_DIR}"/
 
     # 生成 dtb 镜像
     mkdir -p "${KERNEL_BUILD_DIR}"/dtb
