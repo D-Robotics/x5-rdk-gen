@@ -5,11 +5,7 @@ base-passwd
 cmake
 curl
 file
-file
-g++
-gcc
 gdb
-gdbserver
 git
 git-man
 hostapd
@@ -32,7 +28,6 @@ lshw
 lsof
 lua5.2
 luajit
-make
 memstat
 nano
 ncdu

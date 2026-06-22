@@ -15,20 +15,27 @@ LOCAL_DIR="$( cd "$( dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd )"
 # Ubuntu 20.04
 # RELEASE="focal"
 # Ubuntu 22.04
-RELEASE="jammy"
+# RELEASE="jammy"
+# Ubuntu 24.04
+RELEASE="noble"
 ARCH=arm64
 DEBOOTSTRAP_COMPONENTS="main,universe"
 UBUNTU_MIRROR="mirrors4.tuna.tsinghua.edu.cn/ubuntu-ports/"
+ROS2_MIRROR="mirrors4.tuna.tsinghua.edu.cn/ros2/ubuntu"
 
-# To use a local proxy to cache apt packages, you need to install apt-cacher-ng
-apt_mirror="http://localhost:3142/${UBUNTU_MIRROR}"
-apt_extra="-o Acquire::http::Proxy=\"http://localhost:3142\""
+# apt-cacher-ng path forwarding: debootstrap and sources.list inside chroot must use the same URL to share the cache
+# (Acquire::http::Proxy is unreliable with nested quoting in chroot eval, and sources.list pointing directly at the mirror bypasses the cache)
+APT_CACHER="http://localhost:3142"
+apt_deb_url="${APT_CACHER}/${UBUNTU_MIRROR}"
+ros2_deb_url="${APT_CACHER}/${ROS2_MIRROR}"
+board_deb_url="http://${UBUNTU_MIRROR}"
+board_ros2_deb_url="http://${ROS2_MIRROR}"
+apt_mirror="${apt_deb_url}"
 
 PYTHON_PACKAGE_LIST="numpy==1.26.4 opencv-python pySerial i2cdev spidev matplotlib pillow \
-websocket websockets lark-parser netifaces google protobuf==3.20.1 "
+websocket websockets lark-parser netifaces google protobuf==3.20.1 scipy build scikit-build-core pybind11 wheel pandas-stubs"
 
-DEBOOTSTRAP_LIST="systemd sudo locales apt-utils init dbus kmod udev bash-completion ntp libjsoncpp-dev libjson-c-dev rapidjson-dev libgpiod2 libgpiod-dev libdrm-dev libevent-dev kcapi-tools libkcapi-dev libminizip-dev libhidapi-libusb0 can-utils dnsmasq linuxptp libpcap-dev"
-
+DEBOOTSTRAP_LIST="systemd udev dbus locales apt-utils sudo init kmod bash-completion"
 get_package_list()
 {
 	package_list_file="${LOCAL_DIR}/${RELEASE}/ubuntu-${1}-${ARCH}-packages"
@@ -43,7 +50,7 @@ get_package_list()
 # The default version is Ubuntu Desktop
 ADD_PACKAGE_LIST="$(get_package_list "base") $(get_package_list "server") $(get_package_list "desktop") "
 ubuntufs_src="${LOCAL_DIR}/desktop"
-samplefs_version="v3.0.5"
+samplefs_version="v3.1.0"
 tar_file=${ubuntufs_src}/samplefs_desktop_${RELEASE}-${samplefs_version}.tar.gz
 
 
@@ -89,6 +96,12 @@ case $RELEASE in
 		ADD_PACKAGE_LIST+="ros-foxy-ros-base"
 	;;
 	jammy)
+		# Dependent debootstarp packages
+		DEBOOTSTRAP_COMPONENTS="main,universe"
+		DEBOOTSTRAP_LIST+=""
+		ADD_PACKAGE_LIST+=""
+	;;
+	noble)
 		# Dependent debootstarp packages
 		DEBOOTSTRAP_COMPONENTS="main,universe"
 		DEBOOTSTRAP_LIST+=""
@@ -171,43 +184,74 @@ umount_chroot()
 	done
 }
 
+write_apt_sources_list()
+{
+	local release=$1
+	local basedir=$2
+	local deb_url=$3
+	local full=${4:-0}
+
+	if [[ "$full" -eq 1 ]]; then
+		cat <<-EOF > "${basedir}"/etc/apt/sources.list
+# See http://help.ubuntu.com/community/UpgradeNotes for how to upgrade to
+# newer versions of the distribution.
+deb ${deb_url} $release main restricted universe multiverse
+#deb-src ${deb_url} $release main restricted universe multiverse
+
+deb ${deb_url} ${release}-security main restricted universe multiverse
+#deb-src ${deb_url} ${release}-security main restricted universe multiverse
+
+deb ${deb_url} ${release}-updates main restricted universe multiverse
+#deb-src ${deb_url} ${release}-updates main restricted universe multiverse
+
+deb ${deb_url} ${release}-backports main restricted universe multiverse
+#deb-src ${deb_url} ${release}-backports main restricted universe multiverse
+EOF
+	else
+		cat <<-EOF > "${basedir}"/etc/apt/sources.list
+# See http://help.ubuntu.com/community/UpgradeNotes for how to upgrade to
+# newer versions of the distribution.
+deb ${deb_url} $release main restricted universe multiverse
+#deb-src ${deb_url} $release main restricted universe multiverse
+EOF
+	fi
+}
+
+write_ros2_sources_list()
+{
+	local release=$1
+	local basedir=$2
+	local ros2_url=$3
+
+	echo "deb [arch=arm64 signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] ${ros2_url} ${release} main" \
+		| tee "${basedir}"/etc/apt/sources.list.d/ros2.list >/dev/null
+	cp -af "${LOCAL_DIR}"/ros-archive-keyring.gpg "${basedir}"/usr/share/keyrings/
+}
+
 create_base_sources_list()
 {
 	local release=$1
 	local basedir=$2
 	[[ -z $basedir ]] && log_out "No basedir passed to create_base_sources_list" " " "err"
-	cat <<-EOF > "${basedir}"/etc/apt/sources.list
-# See http://help.ubuntu.com/community/UpgradeNotes for how to upgrade to
-# newer versions of the distribution.
-deb http://${UBUNTU_MIRROR} $release main restricted universe multiverse
-#deb-src http://${UBUNTU_MIRROR} $release main restricted universe multiverse
-EOF
-	echo "deb [arch=arm64 signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://mirrors4.tuna.tsinghua.edu.cn/ros2/ubuntu ${release} main" | tee "${basedir}"/etc/apt/sources.list.d/ros2.list >/dev/null
-	cp -af "${LOCAL_DIR}"/ros-archive-keyring.gpg  "${basedir}"/usr/share/keyrings/
+	write_apt_sources_list "${release}" "${basedir}" "${apt_deb_url}" 0
+	write_ros2_sources_list "${release}" "${basedir}" "${ros2_deb_url}"
 }
-
 
 create_sources_list()
 {
 	local release=$1
 	local basedir=$2
 	[[ -z $basedir ]] && log_out "No basedir passed to create_sources_list" " " "err"
-	# cp /etc/apt/sources.list "${basedir}"/etc/apt/sources.list
-	cat <<-EOF > "${basedir}"/etc/apt/sources.list
-# See http://help.ubuntu.com/community/UpgradeNotes for how to upgrade to
-# newer versions of the distribution.
-deb http://${UBUNTU_MIRROR} $release main restricted universe multiverse
-#deb-src http://${UBUNTU_MIRROR} $release main restricted universe multiverse
+	write_apt_sources_list "${release}" "${basedir}" "${apt_deb_url}" 1
+}
 
-deb http://${UBUNTU_MIRROR} ${release}-security main restricted universe multiverse
-#deb-src http://${UBUNTU_MIRROR} ${release}-security main restricted universe multiverse
-
-deb http://${UBUNTU_MIRROR} ${release}-updates main restricted universe multiverse
-#deb-src http://${UBUNTU_MIRROR} ${release}-updates main restricted universe multiverse
-
-deb http://${UBUNTU_MIRROR} ${release}-backports main restricted universe multiverse
-#deb-src http://${UBUNTU_MIRROR} ${release}-backports main restricted universe multiverse
-EOF
+restore_board_sources_list()
+{
+	local release=$1
+	local basedir=$2
+	[[ -z $basedir ]] && log_out "No basedir passed to restore_board_sources_list" " " "err"
+	write_apt_sources_list "${release}" "${basedir}" "${board_deb_url}" 1
+	write_ros2_sources_list "${release}" "${basedir}" "${board_ros2_deb_url}"
 }
 
 end_debootstrap()
@@ -227,49 +271,88 @@ compress_base_root() {
 		--exclude='./run/*' --exclude='./tmp/*' --exclude='./sys/*' .
 }
 
-install_package()
+configure_chroot_debconf()
 {
-	retry=0
-	retry_max=5
+	local target=$1
 
-	echo "Install ${1}"
-	while true
-	do
-		eval 'LC_ALL=C LANG=C chroot ${dst_dir} /bin/bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y $apt_extra --no-install-recommends install ${1}"'
-		if [[ $? -eq 0 ]]; then
+	cat <<-EOF > "${target}"/etc/apt/apt.conf.d/99samplefs-noninteractive
+Dpkg::Options {
+   "--force-confdef";
+   "--force-confold";
+};
+EOF
+
+	chroot "${target}" /bin/bash -c 'debconf-set-selections <<EOF
+debconf debconf/frontend select Noninteractive
+debconf debconf/priority select critical
+resolvconf resolvconf/linkify-resolvconf boolean false
+tzdata tzdata/Areas select Asia
+tzdata tzdata/Zones/Asia select Shanghai
+ucf ucf/use_noninteractive_config boolean true
+EOF'
+}
+
+chroot_dir=
+
+chroot_sh()
+{
+	local cmd=$1
+	chroot "${chroot_dir}" /usr/bin/env \
+		DEBIAN_FRONTEND=noninteractive \
+		DEBCONF_NONINTERACTIVE_SEEN=true \
+		LC_ALL=C LANG=C \
+		/bin/bash -c "${cmd}"
+}
+
+install_packages_batch()
+{
+	local package_list
+	local retry=0
+	local retry_max=5
+
+	package_list="$(echo ${1} | tr ' ' '\n' | awk 'NF' | sort -u | tr '\n' ' ')"
+	[[ -z "${package_list// /}" ]] && return 0
+
+	log_out "Batch installing packages" "$(echo ${package_list} | wc -w) packages" "info"
+	while true; do
+		if chroot_sh "apt-get -y --no-install-recommends install ${package_list}"; then
 			return 0
-		else
-			retry=$(("$retry" + 1))
-			if [ "${retry}" == "${retry_max}" ]; then
-				return 1
-			else
-				sleep 1
-				echo "Retrying ${1} package install"
-			fi
 		fi
+		retry=$(("$retry" + 1))
+		if [[ "${retry}" -ge "${retry_max}" ]]; then
+			return 1
+		fi
+		sleep 2
+		echo "Retrying batch package install (${retry}/${retry_max})"
 	done
 }
 
-# install_package()
-# {
-# 	retry=0
-# 	retry_max=5
-
-# 	package_name=${1}
-
-# 	# Check if package is available
-# 	eval 'LC_ALL=C LANG=C chroot ${dst_dir} /bin/bash -c "apt-cache show ${package_name}"'
-# 	if [[ $? -ne 0 ]]; then
-# 		echo "[ERROR]: Package ${package_name} not found or not available. "
-# 	fi
-# }
+hold_gcc_packages()
+{
+	case "${RELEASE}" in
+		focal)
+			log_out "Hold GCC packages" "9.3.x" "info"
+			chroot_sh "apt-mark hold cpp-9 g++-9 gcc-9-base gcc-9 libasan5 libgcc-9-dev libstdc++-9-dev"
+			;;
+		jammy)
+			log_out "Hold GCC packages" "11.x.x" "info"
+			chroot_sh "apt-mark hold cpp-11 g++-11 gcc-11-base gcc-11 libasan5 libgcc-11-dev libstdc++-11-dev"
+			;;
+		noble)
+			log_out "Hold GCC packages" "13.x.x" "info"
+			chroot_sh "apt-mark hold cpp-13 g++-13 gcc-13-base gcc-13 libasan5 libgcc-13-dev libstdc++-13-dev"
+			;;
+	esac
+}
 
 
 make_base_root() {
 	local dst_dir=$1
+	chroot_dir=$dst_dir
 	rm -rf "$dst_dir"
 	mkdir -p "$dst_dir"
 	trap 'unmount_on_exit "${dst_dir}"' INT TERM EXIT
+	log_out "APT mirror (debootstrap + chroot)" "${apt_deb_url}" "info"
 	log_out "Installing base system : " "Stage 2/1" "info"
 	debootstrap --variant=minbase \
 		--include="${DEBOOTSTRAP_LIST// /,}" \
@@ -298,116 +381,112 @@ make_base_root() {
 	fi
 	mount_chroot "${dst_dir}"
 
-	# this should fix resolvconf installation failure in some cases
-	chroot "${dst_dir}" /bin/bash -c 'echo "resolvconf resolvconf/linkify-resolvconf boolean false" | debconf-set-selections'
+	configure_chroot_debconf "${dst_dir}"
 
 	if [ "${RELEASE}" == "focal" ]; then
 		# base for gcc 9.3
 		create_base_sources_list ${RELEASE} "${dst_dir}"
 		log_out "Updating base packages" "${dst_dir}" "info"
-		eval 'LC_ALL=C LANG=C chroot ${dst_dir} /bin/bash -c "DEBIAN_FRONTEND=noninteractive apt-get -q -y $apt_extra update"'
+		chroot_sh "apt-get -q -y update"
 		[[ $? -ne 0 ]] && exit 1
 		log_out "Upgrading base packages" "${dst_dir}" "info"
-		eval 'LC_ALL=C LANG=C chroot ${dst_dir} /bin/bash -c "DEBIAN_FRONTEND=noninteractive apt-get -q -y $apt_extra upgrade"'
+		chroot_sh "apt-get -q -y upgrade"
 		[[ $? -ne 0 ]] && exit 1
-		log_out "Installing base packages" "${dst_dir}" "info"
-		package_list="${ADD_PACKAGE_LIST}"
-		if [ -n "${package_list}" ]; then
-			for package in ${package_list}
-			do
-				if ! install_package "${package}"; then
-					echo "ERROR: Failed to install ${package}"
-					exit 1
-				fi
-			done
-		fi
-
-		# Fixed GCC version: 9.3.0
-		chroot "${dst_dir}" /bin/bash -c "apt-mark hold cpp-9 g++-9 gcc-9-base gcc-9 libasan5 libgcc-9-dev libstdc++-9-dev"
 	fi
 
 	if [ "${RELEASE}" == "jammy" ]; then
 		# base for gcc 11.x
 		create_base_sources_list ${RELEASE} "${dst_dir}"
 		log_out "Updating base packages" "${dst_dir}" "info"
-		eval 'LC_ALL=C LANG=C chroot ${dst_dir} /bin/bash -c "DEBIAN_FRONTEND=noninteractive apt-get -q -y $apt_extra update"'
+		chroot_sh "apt-get -q -y update"
 		[[ $? -ne 0 ]] && exit 1
 		log_out "Upgrading base packages" "${dst_dir}" "info"
-		eval 'LC_ALL=C LANG=C chroot ${dst_dir} /bin/bash -c "DEBIAN_FRONTEND=noninteractive apt-get -q -y $apt_extra upgrade"'
+		chroot_sh "apt-get -q -y upgrade"
 		[[ $? -ne 0 ]] && exit 1
-		log_out "Installing base packages" "${dst_dir}" "info"
-		package_list="${ADD_PACKAGE_LIST}"
-		if [ -n "${package_list}" ]; then
-			for package in ${package_list}
-			do
-				if ! install_package "${package}"; then
-					echo "ERROR: Failed to install ${package}"
-					exit 1
-				fi
-			done
-		fi
-
-		# Fixed GCC version: 11.x.x
-		chroot "${dst_dir}" /bin/bash -c "apt-mark hold cpp-11 g++-11 gcc-11-base gcc-11 libasan5 libgcc-11-dev libstdc++-11-dev"
 
 		# Add soft links to be compatible with different versions of cross-compilation toolchains
 		chroot "${dst_dir}" /bin/bash -c "ln -sf aarch64-linux-gnu/ /lib/aarch64-none-linux-gnu"
-		# Add 11.2.1 and 11.3.1 soft links to itself
 		chroot "${dst_dir}" /bin/bash -c "ln -sf . /lib/aarch64-none-linux-gnu/11.2.1"
 		chroot "${dst_dir}" /bin/bash -c "ln -sf . /lib/aarch64-none-linux-gnu/11.3.1"
-		
+
 		# Ubuntu Desktop Add firefox from xtradeb/apps
 		if [[ $ubuntufs_src == "${LOCAL_DIR}/desktop"  ]] ; then
-			chroot "${dst_dir}" /bin/bash -c "apt remove firefox -y"
-			chroot "${dst_dir}" /bin/bash -c "apt install gpg-agent -y"
-			chroot "${dst_dir}" /bin/bash -c "apt-get install software-properties-common -y"
+			chroot_sh "apt remove firefox -y"
+			chroot_sh "apt install gpg-agent -y"
+			chroot_sh "apt-get install software-properties-common -y"
 			chroot "${dst_dir}" /bin/bash -c "add-apt-repository ppa:xtradeb/apps -y"
 			chroot "${dst_dir}" /bin/bash -c "apt install firefox -y"
-			# ppa can not use apt_extra,so install here
+			# PPA 源不走 apt-cacher-ng，无法缓存
 			chroot "${dst_dir}" /bin/bash -c "apt install firefox-locale-zh-hans -y"
-			chroot "${dst_dir}" /bin/bash -c "add-apt-repository  --remove ppa:xtradeb/apps -y"
+			chroot "${dst_dir}" /bin/bash -c "add-apt-repository --remove ppa:xtradeb/apps -y"
+		fi
+	fi
+
+	if [ "${RELEASE}" == "noble" ]; then
+		# base for gcc 13.x
+		create_base_sources_list ${RELEASE} "${dst_dir}"
+		log_out "Updating base packages" "${dst_dir}" "info"
+		chroot_sh "apt-get -q -y update"
+		[[ $? -ne 0 ]] && exit 1
+		log_out "Upgrading base packages" "${dst_dir}" "info"
+		chroot_sh "apt-get -q -y upgrade"
+		[[ $? -ne 0 ]] && exit 1
+
+		# arm-gnu-toolchain-13.2 triple is aarch64-none-linux-gnu; Ubuntu libs live under aarch64-linux-gnu
+		# chroot "${dst_dir}" /bin/bash -c "ln -sf aarch64-linux-gnu/ /lib/aarch64-none-linux-gnu"
+
+		# Ubuntu Desktop Add firefox from xtradeb/apps
+		if [[ $ubuntufs_src == "${LOCAL_DIR}/desktop"  ]] ; then
+			chroot_sh "apt remove firefox -y"
+			chroot_sh "apt install gpg-agent -y"
+			chroot_sh "apt-get install software-properties-common -y"
+			chroot "${dst_dir}" /bin/bash -c "add-apt-repository ppa:xtradeb/apps -y"
+			chroot "${dst_dir}" /bin/bash -c "apt install firefox -y"
+			# PPA 源不走 apt-cacher-ng，无法缓存
+			# chroot "${dst_dir}" /bin/bash -c "apt install firefox-locale-zh-hans -y"
+			chroot "${dst_dir}" /bin/bash -c "add-apt-repository --remove ppa:xtradeb/apps -y"
 		fi
 	fi
 
 	# upgrade packages
 	create_sources_list ${RELEASE} "${dst_dir}"
-	log_out "Updating focal-updates and focal-security packages" "${dst_dir}" "info"
-	eval 'LC_ALL=C LANG=C chroot ${dst_dir} /bin/bash -c "DEBIAN_FRONTEND=noninteractive apt-get -q -y $apt_extra update"'
+	log_out "Updating ${RELEASE}-updates and ${RELEASE}-security packages" "${dst_dir}" "info"
+	chroot_sh "apt-get -q -y update"
 	[[ $? -ne 0 ]] && exit 1
 	log_out "Upgrading base packages" "${dst_dir}" "info"
-	eval 'LC_ALL=C LANG=C chroot ${dst_dir} /bin/bash -c "DEBIAN_FRONTEND=noninteractive apt-get -q -y $apt_extra upgrade"'
+	chroot_sh "apt-get -q -y upgrade"
 	[[ $? -ne 0 ]] && exit 1
-	log_out "Installing base packages" "${dst_dir}" "info"
-	package_list="${ADD_PACKAGE_LIST}"
-	if [ -n "${package_list}" ]; then
-		for package in ${package_list}
-		do
-			if ! install_package "${package}"; then
-				echo "ERROR: Failed to install ${package}"
-				exit 1
-			fi
-		done
+
+	log_out "Installing packages" "${dst_dir}" "info"
+	if ! install_packages_batch "${ADD_PACKAGE_LIST}"; then
+		echo "ERROR: Failed to batch install packages"
+		exit 1
 	fi
+	
+	hold_gcc_packages
 
 	if [ "${RELEASE}" == "jammy" ]; then
-		chroot "${dst_dir}" /bin/bash -c "apt install ros-humble-ros-base -y"
-		chroot "${dst_dir}" /bin/bash -c "apt install ros-humble-cv-bridge -y"
-		chroot "${dst_dir}" /bin/bash -c "apt install libpcl-dev libgles2-mesa-dev ocl-icd-libopencl1 opencl-headers -y"
+		chroot_sh "apt install ros-humble-ros-base -y"
+		chroot_sh "apt install ros-humble-cv-bridge -y"
+		chroot_sh "apt install libpcl-dev libgles2-mesa-dev ocl-icd-libopencl1 opencl-headers -y"
+	fi
+
+	if [ "${RELEASE}" == "noble" ]; then
+		chroot_sh "apt install ros-jazzy-ros-base -y"
+		chroot_sh "apt install ros-jazzy-cv-bridge -y"
+		chroot_sh "apt install libpcl-dev libgles2-mesa-dev ocl-icd-libopencl1 opencl-headers -y"
 	fi
 	
 	chroot "${dst_dir}" /bin/bash -c "dpkg --get-selections" | grep -v deinstall | awk '{print $1}' | cut -f1 -d':' | sort > "${tar_file}".info
 
-	chroot "${dst_dir}" /bin/bash -c "pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple"
-	chroot "${dst_dir}" /bin/bash -c "pip3 config set install.trusted-host https://pypi.tuna.tsinghua.edu.cn"
-	chroot "${dst_dir}" /bin/bash -c "pip3 install ${PYTHON_PACKAGE_LIST}"
-	chroot "${dst_dir}" /bin/bash -c "pip3 install --upgrade packaging"
-	py_pkg_list="${PYTHON_PACKAGE_LIST}"
-	if [ -n "${py_pkg_list}" ]; then
-		for package in ${py_pkg_list}
-		do
-			chroot "${dst_dir}" /bin/bash -c "pip3 install ${package}"
-		done
+	pip_install_opts=""
+	if [ "${RELEASE}" = "noble" ]; then
+		pip_install_opts="--break-system-packages"
 	fi
+	chroot "${dst_dir}" /bin/bash -c "pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple"
+	chroot "${dst_dir}" /bin/bash -c "pip3 config set install.trusted-host pypi.tuna.tsinghua.edu.cn"
+	chroot "${dst_dir}" /bin/bash -c "pip3 install ${pip_install_opts} ${PYTHON_PACKAGE_LIST}"
+	#chroot "${dst_dir}" /bin/bash -c "pip3 install ${pip_install_opts} --upgrade packaging"
 	chroot "${dst_dir}" /bin/bash -c "rm -rf /root/.cache"
 
 	DEST_LANG="en_US.UTF-8"
@@ -426,9 +505,12 @@ make_base_root() {
 	chroot "${dst_dir}" /bin/bash -c "sed 's/5min/2sec/g' /lib/systemd/system/networking.service > /tmp/networking.service"
 	chroot "${dst_dir}" /bin/bash -c "mv /tmp/networking.service /lib/systemd/system/networking.service"
 
-	chroot "${dst_dir}" /bin/bash -c "apt clean"
+	log_out "Restore board-facing sources.list" "${board_deb_url}" "info"
+	restore_board_sources_list ${RELEASE} "${dst_dir}"
 
-	chroot "${dst_dir}" /bin/bash -c "rm -f /var/lib/apt/lists/mirrors*"
+	chroot_sh "apt clean"
+
+	chroot "${dst_dir}" /bin/bash -c "rm -f /var/lib/apt/lists/mirrors* /var/lib/apt/lists/localhost*"
 	chroot "${dst_dir}" /bin/bash -c "rm -rf /home/${BUILD_USER}"
 
 	umount_chroot "${dst_dir}"
