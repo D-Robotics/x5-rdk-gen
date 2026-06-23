@@ -12,9 +12,9 @@
 
 **主机编译环境要求**
 
-推荐使用 Ubuntu 22.04 操作系统，保持和RDK X5相同的系统版本，减少因版本差异产生的依赖问题。
+推荐使用 Ubuntu 24.04 操作系统，保持和RDK X5相同的系统版本，减少因版本差异产生的依赖问题。
 
-Ubuntu 22.04 系统安装以下软件包：
+Ubuntu 24.04 系统安装以下软件包：
 
 ```shell
 sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
@@ -24,38 +24,18 @@ sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc biso
                         android-sdk-libsparse-utils mtools parted dosfstools udev rsync device-tree-compiler u-boot-tools ccache
 ```
 
-Ubuntu 18.04 系统安装以下软件包：
-
-```shell
-sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
-                        flex python-numpy python3-pip mtd-utils zlib1g-dev debootstrap \
-                        libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
-                        curl git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
-                        android-tools-fsutils mtools parted dosfstools udev rsync device-tree-compiler u-boot-tools ccache
-```
-
-Ubuntu 20.04 系统安装以下软件包：
-
-```shell
-sudo apt-get install -y build-essential make cmake libpcre3 libpcre3-dev bc bison \
-                        flex python-numpy python3-pip mtd-utils zlib1g-dev debootstrap \
-                        libdata-hexdumper-perl libncurses5-dev zip qemu-user-static \
-                        curl git liblz4-tool apt-cacher-ng libssl-dev checkpolicy autoconf \
-                        android-sdk-libsparse-utils android-sdk-ext4-utils mtools parted dosfstools udev rsync device-tree-compiler u-boot-tools ccache
-```
-
 **安装交叉编译工具链**
 
 执行以下命令下载交叉编译工具链：
 
 ```shell
-curl -fO http://archive.d-robotics.cc/toolchain/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu.tar.xz
+curl -fO https://archive.d-robotics.cc/toolchain/arm-gnu-toolchain-13.2.Rel1-x86_64-aarch64-none-linux-gnu.tar.xz
 ```
 
 解压并安装到 /opt 目录下：
 
 ```shell
-sudo tar -xvf gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu.tar.xz -C /opt
+sudo tar -xvf arm-gnu-toolchain-13.2.Rel1-x86_64-aarch64-none-linux-gnu.tar.xz -C /opt
 ```
 
 ## 下载源码
@@ -64,13 +44,13 @@ rdk-linux 相关的内核、bootloader、hobot-xxx 软件包源码都托管在 [
 
 首先，临时更换repo为国内源
 ```shell
-export REPO_URL='https://mirrors.tuna.tsinghua.edu.cn/git/git-repo/'
+export REPO_URL='https://gerrit-googlesource.proxy.ustclug.org/git-repo'
 ```
 
-执行以下命令初始化主线分支仓库清单 与官方发布的最新系统镜像版本对应：
+执行以下命令初始化Ubuntu24.04分支仓库清单 与官方发布的最新Ubuntu24.04系统镜像版本对应：
 
 ```shell
-repo init -u git@github.com:D-Robotics/x5-manifest.git -b main
+repo init -u git@github.com:D-Robotics/x5-manifest.git -b ubuntu2404
 ```
 
 执行以下命令同步代码
@@ -78,9 +58,6 @@ repo init -u git@github.com:D-Robotics/x5-manifest.git -b main
 ```shell
 repo sync
 ```
-
-也可以下载其他分支代码，比如，使用`-b develop`初始化`develop`分支仓库清单，开发分支的代码会不断新增特性与修复 bug，但是稳定性没有主分支代码高
-
 
 ## 源码目录结构
 
