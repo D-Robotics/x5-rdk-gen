@@ -82,6 +82,22 @@ ROOTFS_BUILD_DIR=${IMAGE_DEPLOY_DIR}/${RDK_ROOTFS_DIR}
 rm -rf "${ROOTFS_BUILD_DIR}"
 [ ! -d "$ROOTFS_BUILD_DIR" ] && mkdir "${ROOTFS_BUILD_DIR}"
 
+function mount_chroot_proc()
+{
+    local target=$1
+    if ! mountpoint -q "${target}/proc" 2>/dev/null; then
+        mount -t proc chproc "${target}/proc"
+    fi
+}
+
+function umount_chroot_proc()
+{
+    local target=$1
+    if mountpoint -q "${target}/proc" 2>/dev/null; then
+        umount "${target}/proc" 2>/dev/null || umount -l "${target}/proc"
+    fi
+}
+
 function install_deb_chroot()
 {
     local package=$1
@@ -111,6 +127,9 @@ function install_packages()
         echo "dst_dir is not exist!" "${dst_dir}"
         exit 1
     fi
+
+    mount_chroot_proc "${dst_dir}"
+    trap 'umount_chroot_proc "'"${dst_dir}"'"' RETURN
 
     echo "Start install hobot packages"
 

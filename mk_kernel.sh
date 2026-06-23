@@ -11,8 +11,8 @@ set -e
 
 source "$(dirname "$0")/.rdk_config"
 
-export CROSS_COMPILE=/opt/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-
-export LD_LIBRARY_PATH=/opt/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/lib64:$LD_LIBRARY_PATH
+export CROSS_COMPILE=/opt/arm-gnu-toolchain-13.2.Rel1-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-
+export LD_LIBRARY_PATH=/opt/arm-gnu-toolchain-13.2.Rel1-x86_64-aarch64-none-linux-gnu/lib64:$LD_LIBRARY_PATH
 export ARCH=arm64
 export HR_TOP_DIR=$(realpath $(cd $(dirname $0); pwd))
 export HR_LOCAL_DIR=$(realpath $(cd $(dirname $0); pwd))

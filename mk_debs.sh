@@ -9,7 +9,7 @@ export HR_LOCAL_DIR=$(realpath $(cd $(dirname $0); pwd))
 
 # 编译出来的镜像保存位置
 export IMAGE_DEPLOY_DIR=${HR_LOCAL_DIR}/deploy
-export CROSS_COMPILE=/opt/gcc-arm-11.2-2022.02-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-
+export CROSS_COMPILE=/opt/arm-gnu-toolchain-13.2.Rel1-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu-
 [ -n "${IMAGE_DEPLOY_DIR}" ] && [ ! -d "$IMAGE_DEPLOY_DIR" ] && mkdir "$IMAGE_DEPLOY_DIR"
 
 ARCH=arm64
