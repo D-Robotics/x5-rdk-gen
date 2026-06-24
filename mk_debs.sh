@@ -525,8 +525,7 @@ function make_debian_deb() {
         # set Commit
         sed -i "s/^Description:.*/&\\n Git Commit: $(git -C "${debian_src_dir}/${pkg_name}" rev-parse HEAD)/" "${deb_dst_dir}"/DEBIAN/control
 
-        cd "${debian_src_dir}"/"${pkg_name}"/drivers/sensor
-
+        cd "${debian_src_dir}"/"${pkg_name}"/drivers/libcam/src/deserial
         make clean || {
            echo "make clean failed"
            exit 1
@@ -542,8 +541,39 @@ function make_debian_deb() {
            exit 1
         }
 
+        cd "${debian_src_dir}"/"${pkg_name}"/drivers/libcam/src/sensor
+        make clean || {
+           echo "make clean failed"
+           exit 1
+        }
+
+        make || {
+           echo "make failed"
+           exit 1
+        }
+
+        make install || {
+           echo "make failed"
+           exit 1
+        }
+
+        cd "${debian_src_dir}"/"${pkg_name}"/drivers/libcam/src/txser
+        make clean || {
+           echo "make clean failed"
+           exit 1
+        }
+
+        make || {
+           echo "make failed"
+           exit 1
+        }
+
+        make install || {
+           echo "make failed"
+           exit 1
+        }
+        cp -rf "${debian_src_dir}"/"${pkg_name}"/drivers/libcam/prebuilts/* "${debian_src_dir}"/"${pkg_name}"/debian/
         cp "${debian_src_dir}"/"${pkg_name}"/debian/usr/hobot/lib/* "${deb_dst_dir}"/usr/hobot/lib/ -a
-        cp -ar "${debian_src_dir}"/"${pkg_name}"/drivers/isp_json/* "${deb_dst_dir}"/usr/hobot/lib/sensor/ -a
         is_allowed=1
         ;;
     hobot-dnn)
