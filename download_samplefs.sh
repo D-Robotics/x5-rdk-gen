@@ -12,7 +12,7 @@ set -euo pipefail
 export HR_LOCAL_DIR="$( cd "$( dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd )"
 
 # Default configuration file
-DEFAULT_CONFIG="${HR_LOCAL_DIR}/build_params/ubuntu-22.04_desktop_rdk-x5_release.conf"
+DEFAULT_CONFIG="${HR_LOCAL_DIR}/build_params/ubuntu-24.04_desktop_rdk-x5_release.conf"
 
 # Initialize variable
 CONFIG_FILE="$DEFAULT_CONFIG"
@@ -68,8 +68,14 @@ main()
     FILE_NAME="samplefs_""${RDK_IMAGE_TYPE}"
     echo "FILE_NAME: $FILE_NAME"
 
+    if [ "${RDK_UBUNTU_VERSION}" == "noble" ] ; then
+        SAMPLEFS_PREFIX="x5_samplefs"
+    else
+        SAMPLEFS_PREFIX="samplefs"
+    fi
+
     if [ "${RDK_SAMPLEFS_VERSION}" == "latest" ] ; then
-        VERSION_FILE="samplefs_${RDK_IMAGE_TYPE}_${RDK_UBUNTU_VERSION}_latest.txt"
+        VERSION_FILE="${SAMPLEFS_PREFIX}_${RDK_IMAGE_TYPE}_${RDK_UBUNTU_VERSION}_latest.txt"
 
         echo "VERSION_FILE: ""$VERSION_FILE"
 
@@ -84,7 +90,7 @@ main()
         # Extract the list of files to download from the version information file
         FILE=$(grep -v "^#" "$VERSION_FILE")
     else
-        FILE="samplefs_${RDK_IMAGE_TYPE}_${RDK_UBUNTU_VERSION}-${RDK_SAMPLEFS_VERSION}.tar.gz"
+        FILE="${SAMPLEFS_PREFIX}_${RDK_IMAGE_TYPE}_${RDK_UBUNTU_VERSION}-${RDK_SAMPLEFS_VERSION}.tar.gz"
     fi
 
     echo "FILE: ${FILE}"

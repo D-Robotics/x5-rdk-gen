@@ -187,8 +187,13 @@ function unmount_image() {
 function make_ubuntu_image()
 {
     # Unzip ubuntu samplefs to create image
-    echo "tar -xzf ${ROOTFS_ORIG_DIR}/samplefs*.tar.gz -C ${ROOTFS_BUILD_DIR}"
-    tar --same-owner --numeric-owner -xzpf "${ROOTFS_ORIG_DIR}"/samplefs*.tar.gz -C "${ROOTFS_BUILD_DIR}"
+    SAMPLEFS_TAR=$(find "${ROOTFS_ORIG_DIR}" -maxdepth 1 \( -name 'samplefs*.tar.gz' -o -name 'x5_samplefs*.tar.gz' \) -print -quit)
+    if [ -z "${SAMPLEFS_TAR}" ]; then
+        echo "Error: No samplefs tar.gz found in ${ROOTFS_ORIG_DIR}" >&2
+        exit 1
+    fi
+    echo "tar -xzf ${SAMPLEFS_TAR} -C ${ROOTFS_BUILD_DIR}"
+    tar --same-owner --numeric-owner -xzpf "${SAMPLEFS_TAR}" -C "${ROOTFS_BUILD_DIR}"
     mkdir -p "${ROOTFS_BUILD_DIR}"/{home,home/root,mnt,root,usr/lib,var,media}
     mkdir -p "${ROOTFS_BUILD_DIR}"/{tftpboot,var/lib,var/volatile,dev,proc,tmp}
     mkdir -p "${ROOTFS_BUILD_DIR}"/{run,sys,userdata,app,boot/hobot,boot/config}

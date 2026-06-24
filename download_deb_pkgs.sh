@@ -30,6 +30,7 @@ show_help() {
 }
 
 download_pkg_list=()
+missing_pkg_list=()
 
 download_file()
 {
@@ -61,19 +62,26 @@ download_file()
 # Download the latest version of the deb package
 get_download_pkg_list()
 {
-    pkg_list=($@)
-    search_line=10;
+    local pkg_list=("$@")
+    local search_line=10
+    local pkg_name VERSION FILENAME MD5SUM DEPENDS PKG_FILE PKG_URL
 
     # Loop through each package name in the list
     for pkg_name in "${pkg_list[@]}"
     do
         # if pkg_name in download_pkg_list, skip add it
-        if [[ ${download_pkg_list[@]} =~ "${pkg_name}," ]]; then
+        if [[ ${download_pkg_list[*]} =~ ${pkg_name}, ]]; then
             continue
         fi
 
         # Get the latest version number from the Packages file
-        VERSION=$(cat Packages | awk -v pkg="${pkg_name}" '$1 == "Package:" && $2 == pkg {while (getline) {if ($1 == "Version:") {print $2;break;}}}' | sort -V | tail -n1)
+        VERSION=$(awk -v pkg="${pkg_name}" '$1 == "Package:" && $2 == pkg {while (getline) {if ($1 == "Version:") {print $2;break;}}}' Packages | sort -V | tail -n1 || true)
+        if [[ -z "$VERSION" ]]; then
+            echo "Error: Package '${pkg_name}' not found in Packages, skipping" >&2
+            missing_pkg_list+=("${pkg_name}")
+            continue
+        fi
+
         if [[ $pkg_name == *xserver* ]]; then
             search_line=20
         else
@@ -82,21 +90,21 @@ get_download_pkg_list()
         FILENAME=$(grep -A ${search_line} -E "^Package: ${pkg_name}$" Packages | \
             grep -A $((search_line - 1)) -B 1 -E "Version: ${VERSION}$" | \
             grep '^Filename: ' | cut -d ' ' -f 2 | \
-            sort -V | tail -n1)
+            sort -V | tail -n1 || true)
         MD5SUM=$(grep -A ${search_line} -B 1 -E "Package: ${pkg_name}$" Packages | \
             grep -A $((search_line - 1)) -B 1 -E "Version: ${VERSION}$" | \
             grep '^MD5sum: ' | cut -d ' ' -f 2 | \
-            sort -V | tail -n1)
+            sort -V | tail -n1 || true)
         DEPENDS=$(grep -A ${search_line} -B 1 -E "Package: ${pkg_name}$" Packages | \
             grep -A $((search_line - 1)) -B 1 -E "Version: ${VERSION}$" | \
             grep '^Depends: ' | \
             cut -d ' ' -f 2- | \
             sed 's/,/ /g' || true)
-        # echo "Package: ${pkg_name} Version: ${VERSION} FILENAME: ${FILENAME} MD5SUM: ${MD5SUM} DEPENDS: ${DEPENDS}"
 
-        if [[ -z "$VERSION" ]]; then
-            echo "Error: Unable to retrieve version number for $pkg_name" >&2
-            return 1
+        if [[ -z "$FILENAME" || -z "$MD5SUM" ]]; then
+            echo "Error: Unable to retrieve metadata for '${pkg_name}' (version ${VERSION}), skipping" >&2
+            missing_pkg_list+=("${pkg_name}")
+            continue
         fi
 
         # Construct the name of the deb package
@@ -117,8 +125,7 @@ get_download_pkg_list()
         # If DEPENDS is not empty, recursively parse dependent packages
         if [[ -n "${DEPENDS}" ]]; then
             get_download_pkg_list ${DEPENDS}
-fi
-
+        fi
     done
 }
 
@@ -212,18 +219,32 @@ main()
     [ -n "${RDK_DEB_PKG_DIR}" ] && [ ! -d "${RDK_DEB_PKG_DIR}" ] && mkdir "${RDK_DEB_PKG_DIR}"
     cd "${RDK_DEB_PKG_DIR}"
 
+    echo "RDK_ARCHIVE_URL: ${RDK_ARCHIVE_URL}"
+    echo "package_url: ${package_url}"
+
     if curl -sfO --connect-timeout 20 "${RDK_ARCHIVE_URL}${package_url}"; then
         echo "Packages downloaded successfully"
     else
         echo "Packages downloaded failed"
         return 1
     fi
-
     get_download_pkg_list "${RDK_DEB_PKG_LIST[@]}"
+
     # delete same item in download_pkg_list
     mapfile -t download_pkg_list < <(printf "%s\n" "${download_pkg_list[@]}" | sort -u)
 
+    if [[ ${#download_pkg_list[@]} -eq 0 ]]; then
+        echo "Error: No packages found in Packages index" >&2
+        return 1
+    fi
+
     download_deb_pkgs "${download_pkg_list[@]}"
+
+    if [[ ${#missing_pkg_list[@]} -gt 0 ]]; then
+        mapfile -t missing_pkg_list < <(printf "%s\n" "${missing_pkg_list[@]}" | sort -u)
+        echo "Warning: ${#missing_pkg_list[@]} package(s) not found in Packages and were skipped:" >&2
+        printf '  - %s\n' "${missing_pkg_list[@]}" >&2
+    fi
 }
 
 args=("$@")
