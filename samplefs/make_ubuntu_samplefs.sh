@@ -12,12 +12,8 @@ BUILD_USER=$(echo $SUDO_USER)
 echo "current build user:${BUILD_USER}."
 LOCAL_DIR="$( cd "$( dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd )"
 
-# Ubuntu 20.04
-# RELEASE="focal"
-# Ubuntu 22.04
-# RELEASE="jammy"
-# Ubuntu 24.04
-RELEASE="noble"
+# Default: Ubuntu 24.04 (noble). Override with focal(20.04)/jammy(22.04), e.g.: RELEASE=jammy sudo ./make_ubuntu_samplefs.sh d
+RELEASE="${RELEASE:-noble}"
 ARCH=arm64
 DEBOOTSTRAP_COMPONENTS="main,universe"
 UBUNTU_MIRROR="mirrors4.tuna.tsinghua.edu.cn/ubuntu-ports/"
@@ -43,7 +39,7 @@ get_package_list()
 		echo "ERROR: package list file - ${package_list_file} not found" > /dev/stderr
 		exit 1
 	fi
-	PACKAGE_LIST=$(sed ':a;N;$!ba;s/\n/ /g' < "${package_list_file}")
+	PACKAGE_LIST=$(paste -sd' ' < "${package_list_file}")
 	echo "${PACKAGE_LIST}"
 }
 
@@ -55,58 +51,36 @@ tar_file=${ubuntufs_src}/samplefs_desktop_${RELEASE}-${samplefs_version}.tar.gz
 
 
 if [ $# -ge 1 ] ; then
-	# Ubuntu Desktop
-	if [[ $1 == "d"*  ]] ; then
-		ADD_PACKAGE_LIST="$(get_package_list "base") $(get_package_list "server") $(get_package_list "desktop") "
-		ubuntufs_src="${LOCAL_DIR}/desktop"
-		tar_file=${ubuntufs_src}/samplefs_desktop_${RELEASE}-${samplefs_version}.tar.gz
-	fi
-
-	# Ubuntu Server
-	if [[ $1 == "s"*  ]] ; then
-		ADD_PACKAGE_LIST="$(get_package_list "base") $(get_package_list "server") "
-		ubuntufs_src="${LOCAL_DIR}/server"
-		tar_file=${ubuntufs_src}/samplefs_server_${RELEASE}-${samplefs_version}.tar.gz
-	fi
-
-	# Ubuntu Base
-	if [[ $1 == "b"*  ]] ; then
-		ADD_PACKAGE_LIST="$(get_package_list "base") "
-		ubuntufs_src="${LOCAL_DIR}/base"
-		tar_file=${ubuntufs_src}/samplefs_base_${RELEASE}-${samplefs_version}.tar.gz
-	fi
+	case $1 in
+		d*)
+			ADD_PACKAGE_LIST="$(get_package_list "base") $(get_package_list "server") $(get_package_list "desktop") "
+			ubuntufs_src="${LOCAL_DIR}/desktop"
+			tar_file=${ubuntufs_src}/samplefs_desktop_${RELEASE}-${samplefs_version}.tar.gz
+		;;
+		s*)
+			ADD_PACKAGE_LIST="$(get_package_list "base") $(get_package_list "server") "
+			ubuntufs_src="${LOCAL_DIR}/server"
+			tar_file=${ubuntufs_src}/samplefs_server_${RELEASE}-${samplefs_version}.tar.gz
+		;;
+		b*)
+			ADD_PACKAGE_LIST="$(get_package_list "base") "
+			ubuntufs_src="${LOCAL_DIR}/base"
+			tar_file=${ubuntufs_src}/samplefs_base_${RELEASE}-${samplefs_version}.tar.gz
+		;;
+	esac
 fi
 
 echo "Make ${tar_file}"
 
 root_path=${ubuntufs_src}/${RELEASE}-rdk-${ARCH}
 
-# Release specific packages
+# Release-specific packages
 case $RELEASE in
-	bionic)
-		# Dependent debootstarp packages
-		DEBOOTSTRAP_COMPONENTS="main,universe"
-		DEBOOTSTRAP_LIST+=" module-init-tools"
-		ADD_PACKAGE_LIST+=" android-tools-adbd"
-	;;
 	focal)
-		# Dependent debootstarp packages
-		DEBOOTSTRAP_COMPONENTS="main,universe"
-		DEBOOTSTRAP_LIST+=""
-		ADD_PACKAGE_LIST+="ros-foxy-ros-base"
+		ADD_PACKAGE_LIST+=" ros-foxy-ros-base"
 	;;
-	jammy)
-		# Dependent debootstarp packages
-		DEBOOTSTRAP_COMPONENTS="main,universe"
-		DEBOOTSTRAP_LIST+=""
-		ADD_PACKAGE_LIST+=""
-	;;
-	noble)
-		# Dependent debootstarp packages
-		DEBOOTSTRAP_COMPONENTS="main,universe"
-		DEBOOTSTRAP_LIST+=""
-		ADD_PACKAGE_LIST+=""
-	;;
+	jammy|noble)
+		;;
 esac
 
 echo "${ADD_PACKAGE_LIST}"
@@ -252,11 +226,6 @@ restore_board_sources_list()
 	[[ -z $basedir ]] && log_out "No basedir passed to restore_board_sources_list" " " "err"
 	write_apt_sources_list "${release}" "${basedir}" "${board_deb_url}" 1
 	write_ros2_sources_list "${release}" "${basedir}" "${board_ros2_deb_url}"
-}
-
-end_debootstrap()
-{
-	local target=$1
 }
 
 compress_base_root() {
@@ -416,7 +385,7 @@ make_base_root() {
 			chroot_sh "apt-get install software-properties-common -y"
 			chroot "${dst_dir}" /bin/bash -c "add-apt-repository ppa:xtradeb/apps -y"
 			chroot "${dst_dir}" /bin/bash -c "apt install firefox -y"
-			# PPA 源不走 apt-cacher-ng，无法缓存
+			# PPA does not go through apt-cacher-ng, so it cannot be cached
 			chroot "${dst_dir}" /bin/bash -c "apt install firefox-locale-zh-hans -y"
 			chroot "${dst_dir}" /bin/bash -c "add-apt-repository --remove ppa:xtradeb/apps -y"
 		fi
@@ -432,9 +401,6 @@ make_base_root() {
 		chroot_sh "apt-get -q -y upgrade"
 		[[ $? -ne 0 ]] && exit 1
 
-		# arm-gnu-toolchain-13.2 triple is aarch64-none-linux-gnu; Ubuntu libs live under aarch64-linux-gnu
-		# chroot "${dst_dir}" /bin/bash -c "ln -sf aarch64-linux-gnu/ /lib/aarch64-none-linux-gnu"
-
 		# Ubuntu Desktop Add firefox from xtradeb/apps
 		if [[ $ubuntufs_src == "${LOCAL_DIR}/desktop"  ]] ; then
 			chroot_sh "apt remove firefox -y"
@@ -442,8 +408,7 @@ make_base_root() {
 			chroot_sh "apt-get install software-properties-common -y"
 			chroot "${dst_dir}" /bin/bash -c "add-apt-repository ppa:xtradeb/apps -y"
 			chroot "${dst_dir}" /bin/bash -c "apt install firefox -y"
-			# PPA 源不走 apt-cacher-ng，无法缓存
-			# chroot "${dst_dir}" /bin/bash -c "apt install firefox-locale-zh-hans -y"
+			# PPA does not go through apt-cacher-ng, so it cannot be cached
 			chroot "${dst_dir}" /bin/bash -c "add-apt-repository --remove ppa:xtradeb/apps -y"
 		fi
 	fi
@@ -474,7 +439,8 @@ make_base_root() {
 	if [ "${RELEASE}" == "noble" ]; then
 		chroot_sh "apt install ros-jazzy-ros-base -y"
 		chroot_sh "apt install ros-jazzy-cv-bridge -y"
-		chroot_sh "apt install libpcl-dev libgles2-mesa-dev ocl-icd-libopencl1 opencl-headers -y"
+		# Install PCL runtime libs only; libpcl-dev would pull in vtk-dev / opencv-contrib-dev and other build deps
+		chroot_sh "apt install libpcl-common1.14 libpcl-features1.14 libpcl-filters1.14 libpcl-io1.14 libpcl-kdtree1.14 libpcl-search1.14 libpcl-sample-consensus1.14 libpcl-segmentation1.14 libpcl-octree1.14 libpcl-registration1.14 libpcl-surface1.14 libgles2-mesa-dev ocl-icd-libopencl1 opencl-headers -y"
 	fi
 	
 	chroot "${dst_dir}" /bin/bash -c "dpkg --get-selections" | grep -v deinstall | awk '{print $1}' | cut -f1 -d':' | sort > "${tar_file}".info
@@ -500,6 +466,15 @@ make_base_root() {
 	eval 'LC_ALL=C LANG=C chroot $dst_dir /bin/bash -c "locale-gen $DEST_LANG_CN"'
 	eval 'LC_ALL=C LANG=C chroot $dst_dir /bin/bash -c "update-locale LANG=$DEST_LANG LANGUAGE=$DEST_LANG"'
 
+	# fcitx5 input method: set IM module env vars (autostart is provided by the desktop file shipped with fcitx5)
+	if [[ "${RELEASE}" == "noble" && $ubuntufs_src == "${LOCAL_DIR}/desktop" ]] ; then
+		cat > "${dst_dir}"/etc/profile.d/fcitx5.sh <<'EOF'
+export GTK_IM_MODULE=fcitx
+export QT_IM_MODULE=fcitx
+export XMODIFIERS=@im=fcitx
+EOF
+	fi
+
 	chroot "${dst_dir}" /bin/bash -c "systemctl disable hostapd NetworkManager-wait-online.service"
 
 	chroot "${dst_dir}" /bin/bash -c "sed 's/5min/2sec/g' /lib/systemd/system/networking.service > /tmp/networking.service"
@@ -513,8 +488,11 @@ make_base_root() {
 	chroot "${dst_dir}" /bin/bash -c "rm -f /var/lib/apt/lists/mirrors* /var/lib/apt/lists/localhost*"
 	chroot "${dst_dir}" /bin/bash -c "rm -rf /home/${BUILD_USER}"
 
+	# Strip docs/man and unneeded locales to shrink the image
+	chroot "${dst_dir}" /bin/bash -c "rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/info/* /usr/share/groff"
+	chroot "${dst_dir}" /bin/bash -c "find /usr/share/locale -mindepth 1 -maxdepth 1 ! -name 'en*' ! -name 'zh*' -exec rm -rf {} +"
+
 	umount_chroot "${dst_dir}"
-	end_debootstrap "${dst_dir}"
 
 	trap - INT TERM EXIT
 }

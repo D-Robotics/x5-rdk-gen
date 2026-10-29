@@ -13,14 +13,10 @@ htop
 iotop
 iptables
 joystick
-libatlas-base-dev
 libcairo2-dev
 libgflags-dev
 libgoogle-glog-dev
-liblua5.2-dev
-libluabind-dev
 libprotobuf-dev
-libsuitesparse-dev
 libtinyxml-dev
 lrzsz
 lsb-release

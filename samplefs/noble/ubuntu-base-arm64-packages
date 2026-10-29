@@ -44,7 +44,6 @@ libblkid1
 libboost-date-time-dev
 libboost-dev
 libboost-thread-dev
-libbullet-dev
 libc6
 libc6-dev
 libcap2
@@ -88,7 +87,6 @@ libnss-db
 libogg0
 libpcap0.8t64
 libpcre3
-libperl-dev
 libpopt0
 libpostproc57
 libreadline8t64
