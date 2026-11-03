@@ -179,6 +179,7 @@ function make_debian_deb() {
         cp -arf "${IMAGE_DEPLOY_DIR}"/kernel/Image-rt  "${boot_dest_dir}"/ || true
         cp -arf "${KERNEL_DEPLOY_DIR}"/modules/* "${deb_dst_dir}"/
         cp -arf "${debian_src_dir}"/"${pkg_name}"/debian/boot/boot.scr "${deb_dst_dir}"/boot/
+        cp -arf "${debian_src_dir}"/"${pkg_name}"/debian/boot/config.txt "${boot_dest_dir}"/
         case "$RDK_SOC_NAME" in
             x3)
                 rm -f "${deb_dst_dir}/lib/modprobe.d/blacklist-x5.conf"
