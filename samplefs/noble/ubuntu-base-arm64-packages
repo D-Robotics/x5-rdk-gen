@@ -7,6 +7,7 @@ bluez
 build-essential
 busybox
 bzip2
+chrony
 cifs-utils
 console-setup
 cpio
@@ -18,6 +19,7 @@ dosfstools
 e2fsprogs
 ethtool
 exfat-fuse
+fdisk
 ffmpeg
 flex
 i2c-tools
@@ -70,6 +72,7 @@ libglx-mesa0
 libgmp10
 libgnutls30t64
 libgpg-error0
+libhidapi-libusb0
 libidn2-0
 libjson-c5
 libjsoncpp-dev
