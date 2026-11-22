@@ -40,7 +40,7 @@ case "$RDK_SOC_NAME" in
         kernel_version=6.1.83
         KERNEL_SRC_DIR=${HR_TOP_DIR}/source/kernel-rt
 		KERNEL_SOURCE_DIR=${HR_TOP_DIR}/source/kernel
-		KERNEL_RT_PATCH=patch-6.1.83-rt28.patch
+		KERNEL_RT_PATCH=patch-6.1.176-rt64.patch
         ;;
     *)
         echo "Unknown RDK_SOC_NAME: $RDK_SOC_NAME"
@@ -66,7 +66,7 @@ kernel_sublevel=$(awk "/^SUBLEVEL =/{print \$3}" "${KERNEL_SRC_DIR}"/Makefile)
 if [[ "$RDK_SOC_NAME" == "x3" ]]; then
 	export KERNEL_VER="${kernel_version}.${kernel_patch_lvl}.${kernel_sublevel}-rt"
 else
-    export KERNEL_VER="${kernel_version}.${kernel_patch_lvl}.${kernel_sublevel}-rt28"
+    export KERNEL_VER="${kernel_version}.${kernel_patch_lvl}.${kernel_sublevel}-rt64"
 fi
 
 function make_kernel_headers() {
